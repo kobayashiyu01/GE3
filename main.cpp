@@ -14,8 +14,35 @@
 // ファイルに書いたり読んだりするライブラリ
 #include <fstream>
 
+// Debug用のあれやこれやを使えるようにする
+#include <dbghelp.h>
+#pragma comment(lib, "Dbghelp.lib")
+#include <strsafe.h>
 
 
+static LONG WINAPI ExportDump(EXCEPTION_POINTERS* exception)
+{
+	// 誰も捕捉しなかった場合に(Unhandled)、補足する関数を登録
+	// main関数始まってすぐに登録すると良い
+	SetUnhandledExceptionFilter(ExportDump);
+
+	// 時刻を取得して、時刻を名前に入れたファイルを作成。Dumpsディレクトリいかに出力
+	SYSTEMTIME time;
+	GetLocalTime(&time);
+	wchar_t filePath[MAX_PATH] = { 0 };
+	CreateDirectory(L"./Dumps", nullptr);
+	StringCchPrintfW(filePath, MAX_PATH, L"./Dumps/%04d-%02d%02d-%02d%02d.dmp", time.wYear, time.wDay, time.wHour, time.wMinute);
+	HANDLE dumpFileHandle = CreateFile(filePath,
+		GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE |
+		FILE_SHARE_READ, 0, CREATE_ALWAYS, 0, 0);
+
+
+
+
+
+	// 中身はこれから埋める
+	return EXCEPTION_EXECUTE_HANDLER;
+}
 
 // ウィンドウプロシージャ
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg,
@@ -38,7 +65,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg,
 
 
 // ログ
-
 std::wstring ConvertString(const std::string& str) {
 	if (str.empty()) {
 		return std::wstring();
@@ -85,6 +111,7 @@ void ALog(const std::wstring& message)
 //Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 {
+
 	WNDCLASS wc{};
 
 	// ウィンドウプロシージャ
@@ -125,7 +152,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 
 	ShowWindow(hwnd, SW_SHOW);
 
-	MSG msg{};
+
 
 
 
@@ -202,23 +229,23 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	ID3D12Device* device = nullptr;
 
 	// 昨機能レベルとログ出力用の文字列
-	D3D_FEATURE_LEVEL featureLevels[] = { 
-		D3D_FEATURE_LEVEL_12_2, 
-		D3D_FEATURE_LEVEL_12_1, 
-		D3D_FEATURE_LEVEL_12_0 
+	D3D_FEATURE_LEVEL featureLevels[] = {
+		D3D_FEATURE_LEVEL_12_2,
+		D3D_FEATURE_LEVEL_12_1,
+		D3D_FEATURE_LEVEL_12_0
 	};
-	
-	const char* featureLevelStrings[] = { 
-		"12.2", 
-		"12.1", 
-		"12.0" 
+
+	const char* featureLevelStrings[] = {
+		"12.2",
+		"12.1",
+		"12.0"
 	};
 
 	//高い順に生成できるか試していく
 	for (size_t i = 0; i < _countof(featureLevels);++i)
 	{
 		hr = D3D12CreateDevice(useAdapter, featureLevels[i], IID_PPV_ARGS(&device));
-	
+
 		// 指定した機能レベルでデバイスが生成できたかを確認
 		if (SUCCEEDED(hr))
 		{
@@ -232,6 +259,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	assert(device != nullptr);
 	ALog("Complete create D3D12Device!!!\n");// 初期化完了のログを出す
 
+	MSG msg{};
 	//ウィンドウボタンの×ボタンが押されるまでループ
 	while (msg.message != WM_QUIT) {
 
