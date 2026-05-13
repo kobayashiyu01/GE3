@@ -35,12 +35,20 @@ static LONG WINAPI ExportDump(EXCEPTION_POINTERS* exception)
 	HANDLE dumpFileHandle = CreateFile(filePath,
 		GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE |
 		FILE_SHARE_READ, 0, CREATE_ALWAYS, 0, 0);
+	// processId（このexeとId）とクラッシュ（例外）の発生したthreadIdを取得
+	DWORD processId = GetCurrentProcessId();
+	DWORD threadId = GetCurrentThreadId();
 
+	//設定情報を入力
+	MINIDUMP_EXCEPTION_INFORMATION minidumpInformation{ 0 };
+	minidumpInformation.ThreadId = threadId;
+	minidumpInformation.ExceptionPointers = exception;
+	minidumpInformation.ClientPointers = TRUE;
 
+	// Dumpを出力。MiniDumpNormalは最低限の情報を出力するフラグ
+	MiniDumpWriteDump(GetCurrentProcess(), processId, dumpFileHandle, MiniDumpNormal, &minidumpInformation, nullptr, nullptr);
 
-
-
-	// 中身はこれから埋める
+	// 他に関連づけられているSEH例外ハンドラがあれば実行。通常はプロセスを終了する
 	return EXCEPTION_EXECUTE_HANDLER;
 }
 
@@ -108,6 +116,9 @@ void ALog(const std::wstring& message)
 {
 	ALog(ConvertString(message));
 }
+
+
+
 //Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 {
@@ -260,6 +271,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	ALog("Complete create D3D12Device!!!\n");// 初期化完了のログを出す
 
 	MSG msg{};
+
+	uint32_t* p = nullptr;
+	*p = 100;
+
 	//ウィンドウボタンの×ボタンが押されるまでループ
 	while (msg.message != WM_QUIT) {
 
