@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <string>
 #include <format>
+#include <strsafe.h>
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
 // ファイルやディレクトリに関する操作を行うライブラリ
@@ -17,22 +18,22 @@
 // Debug用のあれやこれやを使えるようにする
 #include <dbghelp.h>
 #pragma comment(lib, "Dbghelp.lib")
-#include <strsafe.h>
+
+
 
 
 
 static LONG WINAPI ExportDump(EXCEPTION_POINTERS* exception)
 {
-	// 誰も捕捉しなかった場合に(Unhandled)、補足する関数を登録
-	// main関数始まってすぐに登録すると良い
-	SetUnhandledExceptionFilter(ExportDump);
+
+
 
 	// 時刻を取得して、時刻を名前に入れたファイルを作成。Dumpsディレクトリいかに出力
 	SYSTEMTIME time;
 	GetLocalTime(&time);
 	wchar_t filePath[MAX_PATH] = { 0 };
 	CreateDirectory(L"./Dumps", nullptr);
-	StringCchPrintfW(filePath, MAX_PATH, L"./Dumps/%04d-%02d%02d-%02d%02d.dmp", time.wYear, time.wDay, time.wHour, time.wMinute);
+	StringCchPrintfW(filePath, MAX_PATH, L"./Dumps/%04d-%02d%02d-%02d%02d.dmp", time.wYear, time.wMonth, time.wDay, time.wHour, time.wMinute);
 	HANDLE dumpFileHandle = CreateFile(filePath,
 		GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE |
 		FILE_SHARE_READ, 0, CREATE_ALWAYS, 0, 0);
@@ -165,13 +166,25 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	ShowWindow(hwnd, SW_SHOW);
 
 
-
-
-
-
-
-
 	/////////////////////////////////////////////////////////////↑ここまでWindow処理
+
+
+#ifdef _DEBUG
+	ID3D12Debug1* debugController = nullptr;
+
+	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
+	{
+		// デバッグレイヤーを有効にする
+		debugController->EnableDebugLayer();
+
+		// 更にGPU側でもチェックを行うようにする
+		debugController->SetEnableGPUBasedValidation(TRUE);
+
+	}
+
+
+#endif
+
 
 	// 文字列を格納
 	std::string str0 = { "STRING!!!" };
@@ -270,6 +283,48 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	// デバイスの生成がうまくいってなかったので起動できない
 	assert(device != nullptr);
 	ALog("Complete create D3D12Device!!!\n");// 初期化完了のログを出す
+
+# ifdef _DEBUG
+
+	ID3D12InfoQueue* infoQueue = nullptr;
+
+	if (SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(&infoQueue))))
+	{
+		// やばいエラー時にとまる
+		infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
+
+		// エラー時にとまる
+		infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
+
+		// 警告時にとまる
+		infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, true);
+
+		// 抑制するメッセージのID
+		D3D12_MESSAGE_ID denyIds[] = {
+
+			// Windows11でのDXGIデバッグレイヤーとDX12デバッグレイヤーの相互作用バグによるエラーメッセージ
+			// https://stackoverflow.com/questions/69805245/directx-12-application-is-crashing-in-windows-11
+			D3D12_MESSAGE_ID_RESOURCE_BARRIER_MISMATCHING_COMMAND_LIST_TYPE
+		};
+
+		// 抑制するレベル
+		D3D12_MESSAGE_SEVERITY severities[] = { D3D12_MESSAGE_SEVERITY_INFO };
+		D3D12_INFO_QUEUE_FILTER filter{};
+		filter.DenyList.NumIDs = _countof(denyIds);
+		filter.DenyList.pIDList = denyIds;
+		filter.DenyList.NumSeverities = _countof(severities);
+		filter.DenyList.pSeverityList = severities;
+
+		// 指定したメッセージの表示を抑制する
+		infoQueue->AddStorageFilterEntries(&filter);
+
+		// 解放
+		infoQueue->Release();
+
+
+	}
+# endif
+
 
 	///////////////////////////////////////////////////////////////////////////////////
 
@@ -375,17 +430,30 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 
 	// 次のフレーム用のコマンドリストを準備
 	hr = commandAllocator->Reset();
-		assert(SUCCEEDED(hr));
-		hr = commandList->Reset(commandAllocator, nullptr);
-		assert(SUCCEEDED(hr));
+	assert(SUCCEEDED(hr));
+	hr = commandList->Reset(commandAllocator, nullptr);
+	assert(SUCCEEDED(hr));
+
+
+	////////////////////////////////////////////////////////////////////////////////////////////
 
 	//////////////////////////////////////////////////////////////////////////////////////////
 	MSG msg{};
 
-	
+
+
+	///////////// //////////わざとクラッシュさせるコード。デバッグ用
+	/*uint32_t* p = nullptr;
+	*p = 100;*/
+	////////////////////////
+
 
 	//ウィンドウボタンの×ボタンが押されるまでループ
 	while (msg.message != WM_QUIT) {
+
+		// 誰も捕捉しなかった場合に(Unhandled)、補足する関数を登録
+		// main関数始まってすぐに登録すると良い
+		SetUnhandledExceptionFilter(ExportDump);
 
 		// Windowにメッセージが来ていたら最優先で処理させる
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
