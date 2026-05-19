@@ -126,6 +126,7 @@ void ALog(const std::wstring& message)
 //Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 {
+	SetUnhandledExceptionFilter(ExportDump);
 
 	WNDCLASS wc{};
 
@@ -466,7 +467,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	HANDLE fenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	assert(fenceEvent != nullptr);
 
-	
+
 	///////////////////////////////////////////////////////////////////////////////////
 
 	// コマンドリストの内容を確定させる。すべてのコマンドを積んでからCloseすること
@@ -508,13 +509,15 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	hr = commandList->Reset(commandAllocator, nullptr);
 	assert(SUCCEEDED(hr));
 
+	// 誰も捕捉しなかった場合に(Unhandled)、補足する関数を登録
+	// main関数始まってすぐに登録すると良い
 
 	////////////////////////////////////////////////////////////////////////////////////////////
 
 	//////////////////////////////////////////////////////////////////////////////////////////
 	MSG msg{};
 
-
+	
 
 	////////////////////////わざとクラッシュさせるコード。デバッグ用
 	//uint32_t* p = nullptr;
@@ -525,10 +528,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 
 	//ウィンドウボタンの×ボタンが押されるまでループ
 	while (msg.message != WM_QUIT) {
-
-		// 誰も捕捉しなかった場合に(Unhandled)、補足する関数を登録
-		// main関数始まってすぐに登録すると良い
-		SetUnhandledExceptionFilter(ExportDump);
 
 		// Windowにメッセージが来ていたら最優先で処理させる
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
@@ -558,9 +557,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	useAdapter->Release();
 	dxgiFactory->Release();
 #ifdef _DEBUG
-	  debugController->Release();
+	debugController->Release();
 #endif // _DEBUG
-	  CloseWindow(hwnd);
+	CloseWindow(hwnd);
 
 	// リソースチェック
 
