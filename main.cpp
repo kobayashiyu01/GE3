@@ -756,7 +756,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	vertexData[1] = { 0.0f,0.5f,0.0f,1.0f };
 
 	// 右下
-	vertexData[1] = { 0.5f,-0.5f,0.0f,1.0f };
+	vertexData[2] = { 0.5f,-0.5f,0.0f,1.0f };
 
 	// ビューポート
 	D3D12_VIEWPORT viewport{};
