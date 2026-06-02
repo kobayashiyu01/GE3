@@ -567,18 +567,11 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 
 	///////////////////////////////////////////////////////////////////////////////////
 
-	// 画面に描く処理はすべて終わり、画面に映す、状態を遷移
-	// 今回はRenderTargetからPresentにする
-	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+	
+	
 
-	// TransitionBsrrierを張る
-	commandList->ResourceBarrier(1, &barrier);
-
-	//////////////////////////////////////////////////////////////////
-
-		// 初期値0でFenceを作る
-	ID3D12Fence* fence = nullptr;
+			// 初期値0でFenceを作る
+		ID3D12Fence * fence = nullptr;
 	uint64_t fenceValue = 0;
 	hr = device->CreateFence(fenceValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
 	assert(SUCCEEDED(hr));
@@ -606,47 +599,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 
 	///////////////////////////////////////////////////////////////////////////////////
 
-	// コマンドリストの内容を確定させる。すべてのコマンドを積んでからCloseすること
-	hr = commandList->Close();
-	assert(SUCCEEDED(hr));
 
-	// GPUのコマンドリストの実行を行わせる
-	ID3D12CommandList* commandLists[] = { commandList };
-	commandQueue->ExecuteCommandLists(1, commandLists);
-
-	// GPUとOSに画面の交換を行うよう通知する
-	swapChain->Present(1, 0);
-
-	//////////////////////////////////////////
-
-	// Fenceの値を更新
-	fenceValue++;
-
-	// GPUがここまでたどり着いたときに、Fenceの値を指定した値に代入をするようにSignalを送る
-	commandQueue->Signal(fence, fenceValue);
-
-	// Fenceの値指定したSignal値にたどり着いているか確認する
-	// GetCompletedValueの初期値はFence作成時に渡した初期値
-	if (fence->GetCompletedValue() < fenceValue)
-	{
-		// 指定したSignal値にたどり着いていないので、たどり着くまで待つようにイベントを設定する
-		fence->SetEventOnCompletion(fenceValue, fenceEvent);
-
-		// イベント待つ
-		WaitForSingleObject(fenceEvent, INFINITE);
-	}
-
-
-	//////////////////////////////////////////
-	// 
-	// 次のフレーム用のコマンドリストを準備
-	hr = commandAllocator->Reset();
-	assert(SUCCEEDED(hr));
-	hr = commandList->Reset(commandAllocator, nullptr);
-	assert(SUCCEEDED(hr));
-
-	// 誰も捕捉しなかった場合に(Unhandled)、補足する関数を登録
-	// main関数始まってすぐに登録すると良い
 
 	////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -841,11 +794,58 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	assert(vertexBufferview.BufferLocation != 0);
 	assert(vertexBufferview.SizeInBytes != 0);
 	assert(vertexBufferview.StrideInBytes != 0);
-	// 描画！（DrawCall/ドローコール)。3頂点で1つのインスタンス。インスタンスについては今後
-	commandList->DrawInstanced(3, 1, 0, 0);
-
 	// マテリアルCBufferの場所を設定
 	commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
+	// 描画！（DrawCall/ドローコール)。3頂点で1つのインスタンス。インスタンスについては今後
+	commandList->DrawInstanced(3, 1, 0, 0);
+	// 画面に描く処理はすべて終わり、画面に映す、状態を遷移
+		// 今回はRenderTargetからPresentにする
+		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+
+	// TransitionBsrrierを張る
+	commandList->ResourceBarrier(1, &barrier);
+	// コマンドリストの内容を確定させる。すべてのコマンドを積んでからCloseすること
+	hr = commandList->Close();
+	assert(SUCCEEDED(hr));
+
+	// GPUのコマンドリストの実行を行わせる
+	ID3D12CommandList* commandLists[] = { commandList };
+	commandQueue->ExecuteCommandLists(1, commandLists);
+
+	// GPUとOSに画面の交換を行うよう通知する
+	swapChain->Present(1, 0);
+
+	//////////////////////////////////////////
+
+	// Fenceの値を更新
+	fenceValue++;
+
+	// GPUがここまでたどり着いたときに、Fenceの値を指定した値に代入をするようにSignalを送る
+	commandQueue->Signal(fence, fenceValue);
+
+	// Fenceの値指定したSignal値にたどり着いているか確認する
+	// GetCompletedValueの初期値はFence作成時に渡した初期値
+	if (fence->GetCompletedValue() < fenceValue)
+	{
+		// 指定したSignal値にたどり着いていないので、たどり着くまで待つようにイベントを設定する
+		fence->SetEventOnCompletion(fenceValue, fenceEvent);
+
+		// イベント待つ
+		WaitForSingleObject(fenceEvent, INFINITE);
+	}
+
+
+	//////////////////////////////////////////
+	// 
+	// 次のフレーム用のコマンドリストを準備
+	hr = commandAllocator->Reset();
+	assert(SUCCEEDED(hr));
+	hr = commandList->Reset(commandAllocator, nullptr);
+	assert(SUCCEEDED(hr));
+
+	// 誰も捕捉しなかった場合に(Unhandled)、補足する関数を登録
+	// main関数始まってすぐに登録すると良い
 	//////////////////////////////////////////////////////////////////////////////////////////
 	MSG msg{};
 
