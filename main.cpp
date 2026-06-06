@@ -8,7 +8,13 @@
 #include <strsafe.h>
 #include <dxgidebug.h>
 #include <dxcapi.h>
+#ifdef USE_IMGUI
+#include "externals/imgui/imgui.h"
+#include "externals/imgui/imgui_impl_dx12.h"
+#include "externals/imgui/imgui_impl_win32.h"
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 #pragma comment(lib,"dxcompiler.lib")
+#endif 
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
@@ -28,7 +34,196 @@ struct Vector4
 {
 	float x, y, z, w;
 };
+struct Vector3 {
+	float x;
+	float y;
+	float z;
+};
+struct Matrix4x4 {
+	float m[4][4];
+};
+struct Transform {
+	Vector3 scale;
+	Vector3 rotate;
+	Vector3 translate;
+};
+float materialColor[4] =
+{
+	1.0f,
+	0.0f,
+	0.0f,
+	1.0f
+};
+Matrix4x4 Multiply(const Matrix4x4& m1, const Matrix4x4& m2)
+{
+	Matrix4x4 result{};
 
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 4; j++) {
+			for (int k = 0; k < 4; k++) {
+				result.m[i][j] += m1.m[i][k] * m2.m[k][j];
+			}
+		}
+	}
+	return result;
+}
+// 3次元アフィン変換行列
+
+Matrix4x4 MakeAffineMatrix(const Vector3& scale, const Vector3& rotate, const Vector3& translate)
+{
+	// スケーリング行列
+	Matrix4x4 scaleMatrix = {
+	scale.x,0.0f,0.0f,0.f,
+	0.0f,scale.y,0.0f,0.0f,
+	0.0f,0.0f,scale.z,0.0f,
+	0.0f,0.0f,0.0f,1.0f
+	};
+
+
+
+	// 回転行列
+
+	Matrix4x4 rotateX = {
+
+	1.0f,0.0f,0.0f,0.0f,
+	0.0f,cosf(rotate.x),sinf(rotate.x),0.0f,
+	0.0f,-sinf(rotate.x),cosf(rotate.x),0.0f,
+	0.0f,0.0f,0.0f,1.0f
+
+	};
+
+	///////////////////////////////////////////////////////////////////
+
+	Matrix4x4 rotateY = {
+
+		cosf(rotate.y),0.0f,-sinf(rotate.y),0.0f,
+		0.0f,1.0f,0.0f,0.0f,
+		sinf(rotate.y),0.0f,cosf(rotate.y),0.0f,
+		0.0f,0.0f,0.0f,1.0f
+
+	};
+
+	//////////////////////////////////////////////////////////////////
+
+	Matrix4x4 rotateZ = {
+
+		cosf(rotate.z),sinf(rotate.z),0.0f,0.0f,
+		-sinf(rotate.z),cosf(rotate.z),0.0f,0.0f,
+		0.0f,0.0f,1.0f,0.0f,
+		0.0f,0.0f,0.0f,1.0f
+
+	};
+
+	/////////////////////////////////////////////////////////////////
+
+	// 平行移動行列
+	Matrix4x4 translateMatrix = {
+	1.0f,0.0f,0.0f,0.0f,
+	0.0f,1.0f,0.0f,0.0f,
+	0.0f,0.0f,1.0f,0.0f,
+	translate.x,translate.y,translate.z,1.0f
+	};
+
+	Matrix4x4 rotateXYZ = Multiply(Multiply(rotateX, rotateY), rotateZ);
+
+	// アフィン変換行列の合成
+	Matrix4x4 result = Multiply(Multiply(scaleMatrix, rotateXYZ), translateMatrix);
+
+	return result;
+}
+Matrix4x4 Invers(const Matrix4x4& m)
+{
+	Matrix4x4 result{};
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	result.m[0][0] = m.m[1][1] * m.m[2][2] * m.m[3][3] - m.m[1][1] * m.m[2][3] * m.m[3][2] - m.m[2][1] * m.m[1][2] * m.m[3][3] + m.m[2][1] * m.m[1][3] * m.m[3][2] + m.m[3][1] * m.m[1][2] * m.m[2][3] - m.m[3][1] * m.m[1][3] * m.m[2][2];
+
+	result.m[0][1] = -m.m[0][1] * m.m[2][2] * m.m[3][3] + m.m[0][1] * m.m[2][3] * m.m[3][2] + m.m[2][1] * m.m[0][2] * m.m[3][3] - m.m[2][1] * m.m[0][3] * m.m[3][2] - m.m[3][1] * m.m[0][2] * m.m[2][3] + m.m[3][1] * m.m[0][3] * m.m[2][2];
+
+	result.m[0][2] = m.m[0][1] * m.m[1][2] * m.m[3][3] - m.m[0][1] * m.m[1][3] * m.m[3][2] - m.m[1][1] * m.m[0][2] * m.m[3][3] + m.m[1][1] * m.m[0][3] * m.m[3][2] + m.m[3][1] * m.m[0][2] * m.m[1][3] - m.m[3][1] * m.m[0][3] * m.m[1][2];
+
+	result.m[0][3] = -m.m[0][1] * m.m[1][2] * m.m[2][3] + m.m[0][1] * m.m[1][3] * m.m[2][2] + m.m[1][1] * m.m[0][2] * m.m[2][3] - m.m[1][1] * m.m[0][3] * m.m[2][2] - m.m[2][1] * m.m[0][2] * m.m[1][3] + m.m[2][1] * m.m[0][3] * m.m[1][2];
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	result.m[1][0] = -m.m[1][0] * m.m[2][2] * m.m[3][3] + m.m[1][0] * m.m[2][3] * m.m[3][2] + m.m[2][0] * m.m[1][2] * m.m[3][3] - m.m[2][0] * m.m[1][3] * m.m[3][2] - m.m[3][0] * m.m[1][2] * m.m[2][3] + m.m[3][0] * m.m[1][3] * m.m[2][2];
+
+	result.m[1][1] = m.m[0][0] * m.m[2][2] * m.m[3][3] - m.m[0][0] * m.m[2][3] * m.m[3][2] - m.m[2][0] * m.m[0][2] * m.m[3][3] + m.m[2][0] * m.m[0][3] * m.m[3][2] + m.m[3][0] * m.m[0][2] * m.m[2][3] - m.m[3][0] * m.m[0][3] * m.m[2][2];
+
+	result.m[1][2] = -m.m[0][0] * m.m[1][2] * m.m[3][3] + m.m[0][0] * m.m[1][3] * m.m[3][2] + m.m[1][0] * m.m[0][2] * m.m[3][3] - m.m[1][0] * m.m[0][3] * m.m[3][2] - m.m[3][0] * m.m[0][2] * m.m[1][3] + m.m[3][0] * m.m[0][3] * m.m[1][2];
+
+	result.m[1][3] = m.m[0][0] * m.m[1][2] * m.m[2][3] - m.m[0][0] * m.m[1][3] * m.m[2][2] - m.m[1][0] * m.m[0][2] * m.m[2][3] + m.m[1][0] * m.m[0][3] * m.m[2][2] + m.m[2][0] * m.m[0][2] * m.m[1][3] - m.m[2][0] * m.m[0][3] * m.m[1][2];
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	result.m[2][0] = m.m[1][0] * m.m[2][1] * m.m[3][3] - m.m[1][0] * m.m[2][3] * m.m[3][1] - m.m[2][0] * m.m[1][1] * m.m[3][3] + m.m[2][0] * m.m[1][3] * m.m[3][1] + m.m[3][0] * m.m[1][1] * m.m[2][3] - m.m[3][0] * m.m[1][3] * m.m[2][1];
+
+	result.m[2][1] = -m.m[0][0] * m.m[2][1] * m.m[3][3] + m.m[0][0] * m.m[2][3] * m.m[3][1] + m.m[2][0] * m.m[0][1] * m.m[3][3] - m.m[2][0] * m.m[0][3] * m.m[3][1] - m.m[3][0] * m.m[0][1] * m.m[2][3] + m.m[3][0] * m.m[0][3] * m.m[2][1];
+
+	result.m[2][2] = m.m[0][0] * m.m[1][1] * m.m[3][3] - m.m[0][0] * m.m[1][3] * m.m[3][1] - m.m[1][0] * m.m[0][1] * m.m[3][3] + m.m[1][0] * m.m[0][3] * m.m[3][1] + m.m[3][0] * m.m[0][1] * m.m[1][3] - m.m[3][0] * m.m[0][3] * m.m[1][1];
+
+	result.m[2][3] = -m.m[0][0] * m.m[1][1] * m.m[2][3] + m.m[0][0] * m.m[1][3] * m.m[2][1] + m.m[1][0] * m.m[0][1] * m.m[2][3] - m.m[1][0] * m.m[0][3] * m.m[2][1] - m.m[2][0] * m.m[0][1] * m.m[1][3] + m.m[2][0] * m.m[0][3] * m.m[1][1];
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	result.m[3][0] = -m.m[1][0] * m.m[2][1] * m.m[3][2] + m.m[1][0] * m.m[2][2] * m.m[3][1] + m.m[2][0] * m.m[1][1] * m.m[3][2] - m.m[2][0] * m.m[1][2] * m.m[3][1] - m.m[3][0] * m.m[1][1] * m.m[2][2] + m.m[3][0] * m.m[1][2] * m.m[2][1];
+
+	result.m[3][1] = m.m[0][0] * m.m[2][1] * m.m[3][2] - m.m[0][0] * m.m[2][2] * m.m[3][1] - m.m[2][0] * m.m[0][1] * m.m[3][2] + m.m[2][0] * m.m[0][2] * m.m[3][1] + m.m[3][0] * m.m[0][1] * m.m[2][2] - m.m[3][0] * m.m[0][2] * m.m[2][1];
+
+	result.m[3][2] = -m.m[0][0] * m.m[1][1] * m.m[3][2] + m.m[0][0] * m.m[1][2] * m.m[3][1] + m.m[1][0] * m.m[0][1] * m.m[3][2] - m.m[1][0] * m.m[0][2] * m.m[3][1] - m.m[3][0] * m.m[0][1] * m.m[1][2] + m.m[3][0] * m.m[0][2] * m.m[1][1];
+
+	result.m[3][3] = m.m[0][0] * m.m[1][1] * m.m[2][2] - m.m[0][0] * m.m[1][2] * m.m[2][1] - m.m[1][0] * m.m[0][1] * m.m[2][2] + m.m[1][0] * m.m[0][2] * m.m[2][1] + m.m[2][0] * m.m[0][1] * m.m[1][2] - m.m[2][0] * m.m[0][2] * m.m[1][1];
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	// 行列式
+	float det =
+		m.m[0][0] * result.m[0][0] +
+		m.m[0][1] * result.m[1][0] +
+		m.m[0][2] * result.m[2][0] +
+		m.m[0][3] * result.m[3][0];
+
+	// 行列式で割る
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 4; j++) {
+			result.m[i][j] /= det;
+		}
+	}
+
+	return result;
+}
+Matrix4x4 MakePerspectiveFovMatrix(float fovY, float aspectRatio, float nearClip, float farClip)
+{
+	Matrix4x4 result = {};
+	float f = 1.0f / tanf(fovY / 2.0f);
+	result.m[0][0] = f / aspectRatio;
+	result.m[1][1] = f;
+	result.m[2][2] = farClip / (farClip - nearClip);
+	result.m[2][3] = 1.0f;
+	result.m[3][2] = (-nearClip * farClip) / (farClip - nearClip);
+	result.m[3][3] = 0.0f;
+	return result;
+}
+
+
+// 6. 単位行列の作成
+Matrix4x4 MakeIdentity4x4()
+{
+	Matrix4x4 result{};
+	result.m[0][0] = 1.0f;
+	result.m[0][1] = 0.0f;
+	result.m[0][2] = 0.0f;
+	result.m[0][3] = 0.0f;
+
+	result.m[1][0] = 0.0f;
+	result.m[1][1] = 1.0f;
+	result.m[1][2] = 0.0f;
+	result.m[1][3] = 0.0f;
+
+	result.m[2][0] = 0.0f;
+	result.m[2][1] = 0.0f;
+	result.m[2][2] = 1.0f;
+	result.m[2][3] = 0.0f;
+
+	result.m[3][0] = 0.0f;
+	result.m[3][1] = 0.0f;
+	result.m[3][2] = 0.0f;
+	result.m[3][3] = 1.0f;
+
+	return result;
+}
 
 static LONG WINAPI ExportDump(EXCEPTION_POINTERS* exception)
 {
@@ -64,8 +259,12 @@ static LONG WINAPI ExportDump(EXCEPTION_POINTERS* exception)
 // ウィンドウプロシージャ
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg,
 	WPARAM wparam, LPARAM lparam) {
+#ifdef USE_IMGUI
+	if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam)) {
+		return true;
+	}
 	// メッセージに応じてゲーム固有の処理を行う
-
+#endif // USE_IMGUI
 	switch (msg) {
 		// ウィンドウが破棄された
 	case WM_DESTROY:
@@ -221,7 +420,7 @@ ID3D12Resource* CreateBufferResource(ID3D12Device* device, size_t sizeInBytes) {
 
 	//バッファリソース。テクスチャの場合はまた別の設定をする
 	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-	resourceDesc.Width = sizeof(Vector4) * 3;//リソースのサイズ。今回はVector4を3頂点分
+	resourceDesc.Width = sizeInBytes;//リソースのサイズ。今回はVector4を3頂点分
 
 	// バッファの場合はこれらは1にする決まり
 	resourceDesc.Height = 1;
@@ -240,7 +439,20 @@ ID3D12Resource* CreateBufferResource(ID3D12Device* device, size_t sizeInBytes) {
 	return resource;
 }
 
+ID3D12DescriptorHeap* CreateDescriptorHeap(ID3D12Device* device, D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible) {
 
+	//　ディスクリプタヒープの生成
+
+	ID3D12DescriptorHeap* descriptorHeap = nullptr;
+	D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc{};
+	descriptorHeapDesc.Type = heapType; // レンダーターゲットビュー用
+	descriptorHeapDesc.NumDescriptors = numDescriptors; // ダブルバッファ用に2つ。多くても別に構わない
+	descriptorHeapDesc.Flags = shaderVisible ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	HRESULT hr = device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&descriptorHeap));
+	// ディスクリプタヒープが作れなかったので起動できない
+	assert(SUCCEEDED(hr));
+	return descriptorHeap;
+}
 
 
 //Windowsアプリでのエントリーポイント(main関数)
@@ -491,15 +703,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	hr = dxgiFactory->CreateSwapChainForHwnd(commandQueue, hwnd, &swapChainDesc, nullptr, nullptr, reinterpret_cast<IDXGISwapChain1**>(&swapChain));
 	assert(SUCCEEDED(hr));
 
-	//　ディスクリプタヒープの生成
+	ID3D12DescriptorHeap* rtvDescriptorHeap = CreateDescriptorHeap(device, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 2, false);
+	ID3D12DescriptorHeap* srvDescriptorHeap = CreateDescriptorHeap(device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 128, true);
 
-	ID3D12DescriptorHeap* rtvDescriptorHeap = nullptr;
-	D3D12_DESCRIPTOR_HEAP_DESC rtvDescriptorHeapDesc{};
-	rtvDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV; // レンダーターゲットビュー用
-	rtvDescriptorHeapDesc.NumDescriptors = 2; // ダブルバッファ用に2つ。多くても別に構わない
-	hr = device->CreateDescriptorHeap(&rtvDescriptorHeapDesc, IID_PPV_ARGS(&rtvDescriptorHeap));
-	// ディスクリプタヒープが作れなかったので起動できない
-	assert(SUCCEEDED(hr));
 
 	// SwapChainからResourceを引っ張てくる
 	ID3D12Resource* swapChainResources[2] = { nullptr };
@@ -565,13 +771,15 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	float clearColor[] = { 0.1f,0.25f,0.5f,1.0f }; // 青っぽい色。RGBAの順
 	commandList->ClearRenderTargetView(rtvHandles[backBufferIndex], clearColor, 0, nullptr);
 
+	ID3D12DescriptorHeap* descriptorHeaps[] = { srvDescriptorHeap };
+	commandList->SetDescriptorHeaps(1, descriptorHeaps);
 	///////////////////////////////////////////////////////////////////////////////////
 
-	
-	
+
+
 
 			// 初期値0でFenceを作る
-		ID3D12Fence * fence = nullptr;
+	ID3D12Fence* fence = nullptr;
 	uint64_t fenceValue = 0;
 	hr = device->CreateFence(fenceValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
 	assert(SUCCEEDED(hr));
@@ -609,12 +817,18 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
 	// RootParameter作成。複数設定できるので配列。今回は結果1つだけなので長さ1の配列
-	D3D12_ROOT_PARAMETER rootParameters[1] = {};
+	// RootPrameterへ追加。PixelShaderのMaterialとVertexShaderのTransform
+	D3D12_ROOT_PARAMETER rootParameters[2] = {};
 	rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;    // CBVを使う
 	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; // PixelShaderで使う
 	rootParameters[0].Descriptor.ShaderRegister = 0; // レジスタ番号0とバインド
+	rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;    // CBVを使う
+	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX; // VaertexShaderで使う
+	rootParameters[1].Descriptor.ShaderRegister = 0; // レジスタ番号0とバインド
 	descriptionRootSignature.pParameters = rootParameters; // ルートパラメーター配列へのポインタ
 	descriptionRootSignature.NumParameters = _countof(rootParameters); // 配列の長さ
+
+
 
 
 	// シリアライズしてバイナリにする
@@ -668,7 +882,14 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	IDxcBlob* pixelShaderBlob = CompileShader(L"Object3D.PS.hlsl",
 		L"ps_6_0", dxcUtils, dxcCompiler, includehandler);
 	assert(pixelShaderBlob != nullptr);
+	assert(vertexShaderBlob);
+	assert(pixelShaderBlob);
 
+	assert(vertexShaderBlob->GetBufferPointer());
+	assert(pixelShaderBlob->GetBufferPointer());
+
+	assert(vertexShaderBlob->GetBufferSize() > 0);
+	assert(pixelShaderBlob->GetBufferSize() > 0);
 	// PSO生成
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDesc{};
 	graphicsPipelineStateDesc.pRootSignature = rootSignature;// RootSignature
@@ -760,6 +981,15 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	// 今回は赤を書き込んでみる
 	*materialData = Vector4(1.0f, 0.0f, 0.0f, 1.0f);
 
+	Matrix4x4* matrix = nullptr;
+
+	ID3D12Resource* wvpResource = CreateBufferResource(device, sizeof(Matrix4x4));
+
+	Matrix4x4* wvpData = nullptr;
+
+	wvpResource->Map(0, nullptr, reinterpret_cast<void**>(&wvpData));
+
+	*wvpData = MakeIdentity4x4();
 
 	// ビューポート
 	D3D12_VIEWPORT viewport{};
@@ -796,11 +1026,12 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	assert(vertexBufferview.StrideInBytes != 0);
 	// マテリアルCBufferの場所を設定
 	commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
+	commandList->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
 	// 描画！（DrawCall/ドローコール)。3頂点で1つのインスタンス。インスタンスについては今後
 	commandList->DrawInstanced(3, 1, 0, 0);
 	// 画面に描く処理はすべて終わり、画面に映す、状態を遷移
 		// 今回はRenderTargetからPresentにする
-		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
 	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
 
 	// TransitionBsrrierを張る
@@ -838,11 +1069,11 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 
 	//////////////////////////////////////////
 	// 
-	// 次のフレーム用のコマンドリストを準備
-	hr = commandAllocator->Reset();
-	assert(SUCCEEDED(hr));
-	hr = commandList->Reset(commandAllocator, nullptr);
-	assert(SUCCEEDED(hr));
+	//// 次のフレーム用のコマンドリストを準備
+	//hr = commandAllocator->Reset();
+	//assert(SUCCEEDED(hr));
+	//hr = commandList->Reset(commandAllocator, nullptr);
+	//assert(SUCCEEDED(hr));
 
 	// 誰も捕捉しなかった場合に(Unhandled)、補足する関数を登録
 	// main関数始まってすぐに登録すると良い
@@ -854,6 +1085,29 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	//*p = 100;
 	////////////////////////
 
+
+	Transform transform{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
+
+	Transform cameraTransform{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,-5.0f} };
+
+
+
+
+#ifdef USE_IMGUI
+	// ImGuiの初期化a
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGui::StyleColorsDark();
+	ImGui_ImplWin32_Init(hwnd);
+	ImGui_ImplDX12_Init(device,
+		swapChainDesc.BufferCount,
+		rtvDesc.Format,
+		srvDescriptorHeap,
+		srvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
+		srvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+	ImGuiIO& io = ImGui::GetIO();
+	io.Fonts->Build();
+#endif // USE_IMGUI
 
 
 	//ウィンドウボタンの×ボタンが押されるまでループ
@@ -867,11 +1121,191 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 		}
 		else {
 			//ゲームの処理
+			transform.rotate.y += 0.03f;
+			Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
+			Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
+			Matrix4x4 viewMatrix = Invers(cameraMatrix);
+			Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(kClientWidth) / float(kClientHeight), 0.1f, 100.0f);
+			Matrix4x4 worldviewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
+			*wvpData = worldviewProjectionMatrix;
+			/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+			materialData->x = materialColor[0];
+			materialData->y = materialColor[1];
+			materialData->z = materialColor[2];
+			materialData->w = materialColor[3];
+
+
+
+#ifdef USE_IMGUI
+			ImGui_ImplDX12_NewFrame();
+			ImGui_ImplWin32_NewFrame();
+			ImGui::NewFrame();
+			// 開発用UIの処理。実際に開発用のUIを出す場合はここをゲーム固有の処理に置き換える
+			ImGui::ShowDemoWindow();
+			ImGui::Begin("Debug");
+
+			ImGui::ColorEdit4("Color", materialColor);
+
+			ImGui::End();
+			ImGui::Render();
+#endif // USE_IMGUI
+			commandAllocator->Reset();
+			commandList->Reset(commandAllocator, nullptr);
+
+			backBufferIndex = swapChain->GetCurrentBackBufferIndex();
+
+			//--------------------------------------
+			// PRESENT → RENDER_TARGET
+			//--------------------------------------
+
+			D3D12_RESOURCE_BARRIER barrier{};
+
+			barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+			barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+			barrier.Transition.pResource =
+				swapChainResources[backBufferIndex];
+
+			barrier.Transition.Subresource =
+				D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+
+			barrier.Transition.StateBefore =
+				D3D12_RESOURCE_STATE_PRESENT;
+
+			barrier.Transition.StateAfter =
+				D3D12_RESOURCE_STATE_RENDER_TARGET;
+
+			commandList->ResourceBarrier(1, &barrier);
+
+			//--------------------------------------
+			// RTV設定
+			//--------------------------------------
+
+			commandList->OMSetRenderTargets(
+				1,
+				&rtvHandles[backBufferIndex],
+				FALSE,
+				nullptr);
+
+			//--------------------------------------
+			// クリア
+			//--------------------------------------
+
+
+			commandList->ClearRenderTargetView(
+				rtvHandles[backBufferIndex],
+				clearColor,
+				0,
+				nullptr);
+
+			//--------------------------------------
+			// 描画設定
+			//--------------------------------------
+
+			commandList->RSSetViewports(1, &viewport);
+			commandList->RSSetScissorRects(1, &scissorRect);
+
+			commandList->SetGraphicsRootSignature(
+				rootSignature);
+
+			commandList->SetPipelineState(
+				graphicsPipelineState);
+
+			commandList->IASetPrimitiveTopology(
+				D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+			commandList->IASetVertexBuffers(
+				0,
+				1,
+				&vertexBufferview);
+
+			commandList->SetGraphicsRootConstantBufferView(
+				0,
+				materialResource->GetGPUVirtualAddress());
+
+			commandList->SetGraphicsRootConstantBufferView(
+				1,
+				wvpResource->GetGPUVirtualAddress());
+
+			//--------------------------------------
+			// 三角形描画
+			//--------------------------------------
+
+			commandList->DrawInstanced(
+				3,
+				1,
+				0,
+				0);
+
+			//--------------------------------------
+			// ImGui描画
+			//--------------------------------------
+			ID3D12DescriptorHeap* heaps[] = {
+			 srvDescriptorHeap
+			};
+			commandList->SetDescriptorHeaps(1, heaps);
+			// 実際のcommandListのImGuiの描画コマンドを積む
+
+
+
+#ifdef USE_IMGUI
+			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
+#endif // USE_IMGUI
+
+			//--------------------------------------
+			// RENDER_TARGET → PRESENT
+			//--------------------------------------
+
+			barrier.Transition.StateBefore =
+				D3D12_RESOURCE_STATE_RENDER_TARGET;
+
+			barrier.Transition.StateAfter =
+				D3D12_RESOURCE_STATE_PRESENT;
+
+			commandList->ResourceBarrier(
+				1,
+				&barrier);
+
+			//--------------------------------------
+			// Close
+			//--------------------------------------
+
+			commandList->Close();
+
+			ID3D12CommandList* lists[] = {
+				commandList
+			};
+
+			commandQueue->ExecuteCommandLists(1, lists);
+
+			swapChain->Present(1, 0);
+			//--------------------------------------
+	// Fence待機
+	//--------------------------------------
+
+			fenceValue++;
+
+			commandQueue->Signal(
+				fence,
+				fenceValue);
+
+			if (fence->GetCompletedValue() < fenceValue)
+			{
+				fence->SetEventOnCompletion(
+					fenceValue,
+					fenceEvent);
+
+				WaitForSingleObject(
+					fenceEvent,
+					INFINITE);
+			}
 		}
 
-
 	}
-
+#ifdef USE_IMGUI
+	ImGui_ImplDX12_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
+#endif
 	// 解放処理
 
 	CloseHandle(fenceEvent);
@@ -897,6 +1331,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	pixelShaderBlob->Release();
 	vertexShaderBlob->Release();
 	materialResource->Release();
+	wvpResource->Release();
 #ifdef _DEBUG
 	debugController->Release();
 #endif // _DEBUG
