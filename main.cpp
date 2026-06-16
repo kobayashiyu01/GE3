@@ -1068,12 +1068,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 
 
 	//////////////////////////////////////////
-	// 
-	//// 次のフレーム用のコマンドリストを準備
-	//hr = commandAllocator->Reset();
-	//assert(SUCCEEDED(hr));
-	//hr = commandList->Reset(commandAllocator, nullptr);
-	//assert(SUCCEEDED(hr));
 
 	// 誰も捕捉しなかった場合に(Unhandled)、補足する関数を登録
 	// main関数始まってすぐに登録すると良い
@@ -1094,7 +1088,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 
 
 #ifdef USE_IMGUI
-	// ImGuiの初期化a
+	// ImGuiの初期化
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGui::StyleColorsDark();
@@ -1207,38 +1201,16 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 			commandList->SetGraphicsRootSignature(
 				rootSignature);
 
-			commandList->SetPipelineState(
-				graphicsPipelineState);
 
-			commandList->IASetPrimitiveTopology(
-				D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-			commandList->IASetVertexBuffers(
-				0,
-				1,
-				&vertexBufferview);
 
-			commandList->SetGraphicsRootConstantBufferView(
-				0,
-				materialResource->GetGPUVirtualAddress());
 
-			commandList->SetGraphicsRootConstantBufferView(
-				1,
-				wvpResource->GetGPUVirtualAddress());
+			commandList->IASetVertexBuffers(0, 1, &vertexBufferview);
 
-			//--------------------------------------
-			// 三角形描画
-			//--------------------------------------
+			commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
 
-			commandList->DrawInstanced(
-				3,
-				1,
-				0,
-				0);
+			commandList->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
 
-			//--------------------------------------
-			// ImGui描画
-			//--------------------------------------
 			ID3D12DescriptorHeap* heaps[] = {
 			 srvDescriptorHeap
 			};
