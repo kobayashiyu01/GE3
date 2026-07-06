@@ -1134,49 +1134,54 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	//vertexResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
 	// 実際に頂点リソースを作る
-	ID3D12Resource* vertexResource = CreateBufferResource(device, sizeof(VertexData) * 6);
+	const uint32_t kSubdivision = 32; // 分割数
+
+	const uint32_t vertexCount = kSubdivision * kSubdivision * 6;
+
+	ID3D12Resource* vertexResource =
+		CreateBufferResource(device, sizeof(VertexData) * vertexCount);
 	assert(SUCCEEDED(hr));
 
 	// 頂点バッファビューを作成する
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferview{};
 
-	// リソースの先頭アドレスから使う
-	vertexBufferview.BufferLocation = vertexResource->GetGPUVirtualAddress();
-
 	// 使用するリソースのサイズは頂点3つ分のサイズ
-	vertexBufferview.SizeInBytes = sizeof(VertexData) * 6;
+	vertexBufferview.SizeInBytes = sizeof(VertexData) * vertexCount;
 
 	// 1頂点あたりのサイズ
 	vertexBufferview.StrideInBytes = sizeof(VertexData);
+
+	// リソースの先頭アドレスから使う
+	vertexBufferview.BufferLocation = vertexResource->GetGPUVirtualAddress();
 	// 頂点リソースにデータを書き込む
 	VertexData* vertexData = nullptr;
 
 	// 書き込むためのアドレスを取得
 	vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
 
-	// 左下
-	vertexData[0].position = { -0.5f,-0.5f,0.0f,1.0f };
-	vertexData[0].texcoord = { 0.0f,1.0f };
+	//// 左下
+	//vertexData[0].position = { -0.5f,-0.5f,0.0f,1.0f };
+	//vertexData[0].texcoord = { 0.0f,1.0f };
 
-	// 上
-	vertexData[1].position = { 0.0f,0.5f,0.0f,1.0f };
-	vertexData[1].texcoord = { 0.5f,0.0f };
+	//// 上
+	//vertexData[1].position = { 0.0f,0.5f,0.0f,1.0f };
+	//vertexData[1].texcoord = { 0.5f,0.0f };
 
-	// 右下
-	vertexData[2].position = { 0.5f,-0.5f,0.0f,1.0f };
-	vertexData[2].texcoord = { 1.0f,1.0f };
-	/////////////////////////////////////////////////////////////↓三角ふたつめ
-	// 左下2
-	vertexData[3].position = { -0.5f,-0.5f,0.5f,1.0f };
-	vertexData[3].texcoord = { 0.0f,1.0f };
+	//// 右下
+	//vertexData[2].position = { 0.5f,-0.5f,0.0f,1.0f };
+	//vertexData[2].texcoord = { 1.0f,1.0f };
+	///////////////////////////////////////////////////////////////↓三角ふたつめ
+	//// 左下2
+	//vertexData[3].position = { -0.5f,-0.5f,0.5f,1.0f };
+	//vertexData[3].texcoord = { 0.0f,1.0f };
 
-	// 上2
-	vertexData[4].position = { 0.0f,0.0f,0.0f,1.0f };
-	vertexData[4].texcoord = { 0.5f,0.0f };
+	//// 上2
+	//vertexData[4].position = { 0.0f,0.0f,0.0f,1.0f };
+	//vertexData[4].texcoord = { 0.5f,0.0f };
 
-	// 右下2
-	vertexData[5].position = { 0.5f,-0.5f,-0.5f,1.0f };
-	vertexData[5].texcoord = { 1.0f,1.0f };
+	//// 右下2
+	//vertexData[5].position = { 0.5f,-0.5f,-0.5f,1.0f };
+	//vertexData[5].texcoord = { 1.0f,1.0f };
 
 	// Sprite用の頂点リソースを作る
 	ID3D12Resource* vertexResourceSprite = CreateBufferResource(device, sizeof(VertexData) * 6);
@@ -1230,6 +1235,83 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	ID3D12Resource* materialResource = CreateBufferResource(device, sizeof(Vector4));
 	// マテリアルにデータを書き込む
 	Vector4* materialData = nullptr;
+
+
+
+	const float pi = 3.14159265f;
+
+	const float kLonEvery = pi * 2.0f / float(kSubdivision);// 経度分割1つ分の角度
+
+	const float kLatEvery = pi / float(kSubdivision); // 緯度分割1つ分の角度
+
+
+	// 緯度の方向に分割 -π/2 ~ π/2
+	for (uint32_t latIndex = 0; latIndex < kSubdivision; ++latIndex)
+	{
+		float lat = -pi / 2.0f + kLatEvery * latIndex;
+
+		// 経度の方向に分割 0 ~ 2π
+		for (uint32_t lonIndex = 0; lonIndex < kSubdivision; ++lonIndex)
+		{
+
+			uint32_t start = (latIndex * kSubdivision + lonIndex) * 6;
+
+
+			float lon = lonIndex * kLonEvery;
+
+			// a
+			vertexData[start].position.x = cos(lat) * cos(lon);
+			vertexData[start].position.y = sin(lat);
+			vertexData[start].position.z = cos(lat) * sin(lon);
+			vertexData[start].position.w = 1.0f;
+			vertexData[start].texcoord = { float(lonIndex) / kSubdivision,
+	float(latIndex) / kSubdivision };
+
+
+			// b
+			vertexData[start + 1].position.x = cos(lat + kLatEvery) * cos(lon);
+			vertexData[start + 1].position.y = sin(lat + kLatEvery);
+			vertexData[start + 1].position.z = cos(lat + kLatEvery) * sin(lon);
+			vertexData[start + 1].position.w = 1.0f;
+			vertexData[start + 1].texcoord = { float(lonIndex) / kSubdivision,
+	float(latIndex + 1) / kSubdivision };
+
+
+			// c
+			vertexData[start + 2].position.x = cos(lat) * cos(lon + kLonEvery);
+			vertexData[start + 2].position.y = sin(lat);
+			vertexData[start + 2].position.z = cos(lat) * sin(lon + kLonEvery);
+			vertexData[start + 2].position.w = 1.0f;
+			vertexData[start + 2].texcoord = { float(lonIndex + 1) / kSubdivision,
+	float(latIndex) / kSubdivision };
+
+
+			// c
+			vertexData[start + 3] = vertexData[start + 2];
+			vertexData[start + 3].texcoord =
+			{
+				float(lonIndex + 1) / kSubdivision,
+				float(latIndex) / kSubdivision
+			};
+			// b
+			vertexData[start + 4] = vertexData[start + 1];
+			vertexData[start + 4].texcoord =
+			{
+				float(lonIndex) / kSubdivision,
+				float(latIndex + 1) / kSubdivision
+			};
+			// d
+			vertexData[start + 5].position.x = cos(lat + kLatEvery) * cos(lon + kLonEvery);
+			vertexData[start + 5].position.y = sin(lat + kLatEvery);
+			vertexData[start + 5].position.z = cos(lat + kLatEvery) * sin(lon + kLonEvery);
+			vertexData[start + 5].position.w = 1.0f;
+			vertexData[start + 5].texcoord = { float(lonIndex + 1) / kSubdivision,
+	float(latIndex + 1) / kSubdivision };
+
+
+
+		}
+	}
 
 	// 書き込むためのアドレスを取得
 	materialResource->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
@@ -1325,7 +1407,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
 
 	// 描画！（DrawCall/ドローコール)。3頂点で1つのインスタンス。インスタンスについては今後
-	commandList->DrawInstanced(6, 1, 0, 0);
+	commandList->DrawInstanced(vertexCount, 1, 0, 0);
 	// 画面に描く処理はすべて終わり、画面に映す、状態を遷移
 		// 今回はRenderTargetからPresentにする
 	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
@@ -1530,7 +1612,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 			//--------------------------------------
 			// 三角形描画
 			//--------------------------------------
-			commandList->DrawInstanced(6, 1, 0, 0);
+			commandList->DrawInstanced(vertexCount, 1, 0, 0);
 
 
 			commandList->SetGraphicsRootSignature(rootSignature);
