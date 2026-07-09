@@ -2,7 +2,7 @@
 struct Material
 {
     float32_t4 color ;
-    int32_t enableLinghting;
+    int32_t enableLighting;
 };
 
 struct DirectionalLight

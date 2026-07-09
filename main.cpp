@@ -73,7 +73,7 @@ struct TransformationMatrix
 	Matrix4x4 World;
 };
 
-struct DirectionalLight 
+struct DirectionalLight
 {
 	Vector4 color; //!< ライトの色
 	Vector3 direction; //!< ライトの向き
@@ -1284,7 +1284,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	vertexBufferViewSprite.BufferLocation = vertexResourceSprite->GetGPUVirtualAddress();
 
 	// 使用するリソースのサイズは6つ分のサイズ
-	vertexBufferViewSprite.SizeInBytes = sizeof(VertexData) * 6;
+	vertexBufferViewSprite.SizeInBytes = sizeof(VertexData);
 
 	// 1頂点あたりのサイズ
 	vertexBufferview.StrideInBytes = sizeof(VertexData);
@@ -1310,17 +1310,18 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	vertexDataSprite[5].texcoord = { 1.0f,1.0f };
 
 	// Sprite用のTransformationMatrix用のリソースを作る。Matrix4x4 1つ分のサイズを用意する
-	ID3D12Resource* transformationMatrixResourceSprite = CreateBufferResource(device, sizeof(Matrix4x4));
+	//assert(sizeof(TransformationMatrix) == 128);
+	ID3D12Resource* transformationMatrixResourceSprite = CreateBufferResource(device, sizeof(TransformationMatrix));
 
 	// データを書き込む
-	Matrix4x4* transformationMatrixDataSprite = nullptr;
+	TransformationMatrix* transformationMatrixDataSprite = nullptr;
 
 	// 書き込むためのアドレスを取得
 	transformationMatrixResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixDataSprite));
 
 	// 単位行列を書き込んでおく
-	*transformationMatrixDataSprite = MakeIdentity4x4();
-
+	transformationMatrixDataSprite->World = MakeIdentity4x4();
+	transformationMatrixDataSprite->WVP = MakeIdentity4x4();
 
 
 	// マテリアル用のリソースを作る。今回はcolor1つ分のサイズを用意する
@@ -1395,12 +1396,40 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 			vertexData[start + 5].texcoord = { 1.0f - float(lonIndex + 1) / kSubdivision,
 			1.0f - float(latIndex + 1) / kSubdivision };
 
+			vertexData[start].normal = {
+			vertexData[start].position.x,
+			vertexData[start].position.y,
+			vertexData[start].position.z
+			};
+			vertexData[start + 1].normal = {
+			vertexData[start + 1].position.x,
+			vertexData[start + 1].position.y,
+			vertexData[start + 1].position.z
+			};
 
-			vertexData[start].normal.x = vertexData[start].position.x;
-			vertexData[start].normal.y = vertexData[start].position.y;
-			vertexData[start].normal.z = vertexData[start].position.z;
+			vertexData[start + 2].normal = {
+			vertexData[start + 2].position.x,
+			vertexData[start + 2].position.y,
+			vertexData[start + 2].position.z
+			};
 
+			vertexData[start + 3].normal = {
+			vertexData[start + 3].position.x,
+			vertexData[start + 3].position.y,
+			vertexData[start + 3].position.z
+			};
 
+			vertexData[start + 4].normal = {
+			vertexData[start + 4].position.x,
+			vertexData[start + 4].position.y,
+			vertexData[start + 4].position.z
+			};
+
+			vertexData[start + 5].normal = {
+			vertexData[start + 5].position.x,
+			vertexData[start + 5].position.y,
+			vertexData[start + 5].position.z
+			};
 
 
 		}
@@ -1411,7 +1440,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 
 	// 今回は赤を書き込んでみる
 	materialData->color = { 1.0f,1.0f,1.0f,1.0f };
-	materialData->enableLighting = false;
+	materialData->enableLighting = true;
 
 	Matrix4x4* matrix = nullptr;
 
@@ -1421,6 +1450,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 
 	transformationResource->Map(0, nullptr, reinterpret_cast<void**>(&transformationData));
 
+	transformationData->World = MakeIdentity4x4();
+	transformationData->WVP = MakeIdentity4x4();
 	// DepthStecilTextureをウィンドウのサイズで作成
 	ID3D12Resource* depthstencilResource = CreateDepthStencilTextureResource(device, kClientWidth, kClientHeight);
 
@@ -1451,6 +1482,11 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	graphicsPipelineStateDesc.DepthStencilState = depthStencilDesc;
 	graphicsPipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
+	hr = device->CreateGraphicsPipelineState(
+		&graphicsPipelineStateDesc,
+		IID_PPV_ARGS(&graphicsPipelineState));
+
+	assert(SUCCEEDED(hr));
 	// 描画先のRTVとDSVを設定する
 	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 	commandList->OMSetRenderTargets(1, &rtvHandles[backBufferIndex], false, &dsvHandle);
@@ -1611,7 +1647,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 			Matrix4x4 viewMatrixSprite = MakeIdentity4x4();
 			Matrix4x4 projectionMatrixSprite = MakeOrthographicMatrix(0.0f, 0.0f, float(kClientWidth), float(kClientHeight), 0.0f, 100.0f);
 			Matrix4x4 worldviewProjectionMatrixSprite = Multiply(worldMatrixSprite, Multiply(viewMatrixSprite, projectionMatrixSprite));
-			*transformationMatrixDataSprite = worldviewProjectionMatrixSprite;
+			transformationMatrixDataSprite->WVP = worldviewProjectionMatrixSprite;
+			transformationMatrixDataSprite->World = MakeIdentity4x4();
+
 
 
 			/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
