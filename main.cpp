@@ -54,6 +54,11 @@ struct Transform {
 	Vector3 translate;
 };
 
+struct Matrix3x3
+{
+	float m[3][3];
+};
+
 struct VertexData
 {
 	Vector4 position;
@@ -65,6 +70,8 @@ struct Material
 {
 	Vector4 color;
 	int32_t enableLighting;
+	float padding[3];
+	Matrix4x4 uvTransform;
 };
 
 struct TransformationMatrix
@@ -100,6 +107,45 @@ Matrix4x4 Multiply(const Matrix4x4& m1, const Matrix4x4& m2)
 	}
 	return result;
 }
+Matrix4x4 MakeScaleMatrix(const Vector3& scale)
+{
+	Matrix4x4 result =
+	{
+		scale.x, 0.0f,    0.0f,    0.0f,
+		0.0f,    scale.y, 0.0f,    0.0f,
+		0.0f,    0.0f,    scale.z, 0.0f,
+		0.0f,    0.0f,    0.0f,    1.0f
+	};
+
+	return result;
+}
+
+Matrix4x4 MakeRotateZMatrix(float radian)
+{
+	Matrix4x4 result =
+	{
+		 cosf(radian),  sinf(radian), 0.0f, 0.0f,
+		-sinf(radian),  cosf(radian), 0.0f, 0.0f,
+		 0.0f,          0.0f,         1.0f, 0.0f,
+		 0.0f,          0.0f,         0.0f, 1.0f
+	};
+
+	return result;
+}
+
+Matrix4x4 MakeTranslateMatrix(const Vector3& translate)
+{
+	Matrix4x4 result =
+	{
+		1.0f, 0.0f, 0.0f, 0.0f,
+		0.0f, 1.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f,
+		translate.x, translate.y, translate.z, 1.0f
+	};
+
+	return result;
+}
+
 // 3次元アフィン変換行列
 
 Matrix4x4 MakeAffineMatrix(const Vector3& scale, const Vector3& rotate, const Vector3& translate)
@@ -1459,10 +1505,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	materialResource->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
 
 	// 今回は赤を書き込んでみる
-	materialData->color = { 1.0f,1.0f,1.0f,1.0f };
-	materialData->enableLighting = true;
+	materialData->uvTransform = MakeIdentity4x4();
+	materialData->uvTransform = MakeIdentity4x4();
 
-	Matrix4x4* matrix = nullptr;
 
 	ID3D12Resource* transformationResource = CreateBufferResource(device, sizeof(TransformationMatrix));
 
@@ -1553,7 +1598,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
 	commandList->SetGraphicsRootConstantBufferView(1, transformationResource->GetGPUVirtualAddress());
 	commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
-	commandList->SetGraphicsRootConstantBufferView( 3,directionalLight->GetGPUVirtualAddress());
+	commandList->SetGraphicsRootConstantBufferView(3, directionalLight->GetGPUVirtualAddress());
 	//commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU2);
 
 
@@ -1617,6 +1662,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	// Sprite用
 	Transform transformSprite{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
 
+	Transform uvTransformSprite{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
+
 
 #ifdef USE_IMGUI
 	// ImGuiの初期化
@@ -1647,10 +1694,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 			DispatchMessage(&msg);
 		}
 		else {
-
-
-
-
 
 			//ゲームの処理
 			transform.rotate.y += 0.03f;
@@ -1691,7 +1734,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 
 			ImGui::ColorEdit4("Color", materialColor);
 			ImGui::Checkbox("useMonsterBall", &useMonsterBall);
-
+			ImGui::DragFloat2("UVTranslate", &uvTransformSprite.translate.x, 0.01f, -10.0f, 10.0f);
+			ImGui::DragFloat2("UVTScale", &uvTransformSprite.scale.x, 0.01f, -10.0f, 10.0f);
+			ImGui::SliderAngle("UVTRotate", &uvTransformSprite.rotate.z);
 			ImGui::End();
 			ImGui::Render();
 #endif // USE_IMGUI
@@ -1700,11 +1745,17 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 
 			backBufferIndex = swapChain->GetCurrentBackBufferIndex();
 
-			//--------------------------------------
-			// PRESENT → RENDER_TARGET
-			//--------------------------------------
+			Matrix4x4 uvTransformMatrix = MakeScaleMatrix(uvTransformSprite.scale);
+			uvTransformMatrix = Multiply(uvTransformMatrix, MakeRotateZMatrix(uvTransformSprite.rotate.z));
+			uvTransformMatrix = Multiply(uvTransformMatrix, MakeTranslateMatrix(uvTransformSprite.translate));
+			materialData->uvTransform = uvTransformMatrix;
+			
 
-			D3D12_RESOURCE_BARRIER barrier{};
+				//--------------------------------------
+				// PRESENT → RENDER_TARGET
+				//--------------------------------------
+
+				D3D12_RESOURCE_BARRIER barrier{};
 
 			barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 			barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
