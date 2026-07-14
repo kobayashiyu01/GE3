@@ -1505,7 +1505,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	materialResource->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
 
 	// 今回は赤を書き込んでみる
-	materialData->uvTransform = MakeIdentity4x4();
+	materialData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
+	materialData->enableLighting = 1;
 	materialData->uvTransform = MakeIdentity4x4();
 
 
@@ -1717,12 +1718,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 
 
 			/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-			/*materialData->x = materialColor[0];
-			materialData->y = materialColor[1];
-			materialData->z = materialColor[2];
-			materialData->w = materialColor[3];*/
-
-
 
 #ifdef USE_IMGUI
 			ImGui_ImplDX12_NewFrame();
@@ -1748,14 +1743,22 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 			Matrix4x4 uvTransformMatrix = MakeScaleMatrix(uvTransformSprite.scale);
 			uvTransformMatrix = Multiply(uvTransformMatrix, MakeRotateZMatrix(uvTransformSprite.rotate.z));
 			uvTransformMatrix = Multiply(uvTransformMatrix, MakeTranslateMatrix(uvTransformSprite.translate));
+			materialData->color = {
+				materialColor[0],
+				materialColor[1],
+				materialColor[2],
+				materialColor[3]
+			};
+
+			materialData->enableLighting = 1;
 			materialData->uvTransform = uvTransformMatrix;
-			
 
-				//--------------------------------------
-				// PRESENT → RENDER_TARGET
-				//--------------------------------------
 
-				D3D12_RESOURCE_BARRIER barrier{};
+			//--------------------------------------
+			// PRESENT → RENDER_TARGET
+			//--------------------------------------
+
+			D3D12_RESOURCE_BARRIER barrier{};
 
 			barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 			barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
