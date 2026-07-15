@@ -8,6 +8,8 @@
 #include <strsafe.h>
 #include <dxgidebug.h>
 #include <dxcapi.h>
+#include <fstream>
+#include <sstream>
 #include "externals/DirectXTex/DirectXTex.h"
 #ifdef USE_IMGUI
 #include "externals/imgui/imgui.h"
@@ -72,6 +74,11 @@ struct Material
 	int32_t enableLighting;
 	float padding[3];
 	Matrix4x4 uvTransform;
+};
+
+struct ModelData
+{
+	std::vector<VertexData> vertices;
 };
 
 struct TransformationMatrix
@@ -416,6 +423,73 @@ void ALog(const std::string& message)
 void ALog(const std::wstring& message)
 {
 	ALog(ConvertString(message));
+}
+
+ModelData LoadObjFile(const std::string& directoryPath, const std::string& filename) {
+
+	// 1. 中で必要となる変数の宣言
+	ModelData modelData; // 構築するModelData
+
+	std::vector<Vector4> positions; // 位置
+	std::vector<Vector3> normals; // 法線
+	std::vector<Vector2> texcoords; // テクスチャ座標
+	std::string line; // ファイルから読んだ1行を格納するもの
+
+	// 2. ファイルを開く
+	std::ifstream file(directoryPath + "/" + filename); // ファイルを開く
+	assert(file.is_open()); // とりあえず開けなかったら止める
+
+	// 3. 実際にファイルを読み、ModelDataを構築していく
+	while (std::getline(file, line)) {
+		std::string identifier;
+		std::istringstream s(line);
+		s >> identifier; // 先頭の識別子を読む
+
+		// identifierに応じた処理
+		if (identifier == "v") {
+			Vector4 position;
+			s >> position.x >> position.y >> position.z;
+			position.w = 1.0f;
+			positions.push_back(position);
+		}
+		else if (identifier == "vt") {
+			Vector2 texcoord;
+			s >> texcoord.x >> texcoord.y;
+			texcoords.push_back(texcoord);
+		}
+		else if (identifier == "vn") {
+			Vector3 normal;
+			s >> normal.x >> normal.y >> normal.z;
+			normals.push_back(normal);
+		}
+		else if (identifier == "f") {
+
+			// 面は三角限定。そのほかは未対応
+			for (int32_t faceVertex = 0; faceVertex < 3;++faceVertex) {
+				std::string vertexDefinition;
+				s >> vertexDefinition;
+
+				// 頂点の要素へのIndexは「位置/UV/法線」で格納されているので、分解してIndexを取得する
+				std::istringstream v(vertexDefinition);
+				uint32_t elementIndices[3];
+				for (int32_t element = 0; element < 3;++element) {
+					std::string index;
+					std::getline(v, index, '/'); // /区切りでインデックスを読んでいく
+					elementIndices[element] = std::stoi(index);
+				}
+
+				// 要素へのIndexから、実際の要素の値を取得して、頂点を構築する
+				Vector4 position = positions[elementIndices[0] - 1];
+				Vector2 texcoord = texcoords[elementIndices[1] - 1];
+				Vector3 normal = normals[elementIndices[2] - 1];
+				VertexData vertex = { position,texcoord,normal };
+				modelData.vertices.push_back(vertex);
+			}
+		}
+	}
+
+	// 4. ModelDataを返す
+	return modelData;
 }
 
 IDxcBlob* CompileShader(
@@ -1518,6 +1592,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 
 	transformationData->World = MakeIdentity4x4();
 	transformationData->WVP = MakeIdentity4x4();
+
 	// DepthStecilTextureをウィンドウのサイズで作成
 	ID3D12Resource* depthstencilResource = CreateDepthStencilTextureResource(device, kClientWidth, kClientHeight);
 
@@ -1601,7 +1676,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
 	commandList->SetGraphicsRootConstantBufferView(3, directionalLight->GetGPUVirtualAddress());
 	//commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU2);
-
+	commandList->IASetIndexBuffer(&indexBufferViewSprite);
 
 	// 描画！（DrawCall/ドローコール)。3頂点で1つのインスタンス。インスタンスについては今後
 	commandList->DrawInstanced(vertexCount, 1, 0, 0);
@@ -1729,6 +1804,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 
 			ImGui::ColorEdit4("Color", materialColor);
 			ImGui::Checkbox("useMonsterBall", &useMonsterBall);
+			
 			ImGui::DragFloat2("UVTranslate", &uvTransformSprite.translate.x, 0.01f, -10.0f, 10.0f);
 			ImGui::DragFloat2("UVTScale", &uvTransformSprite.scale.x, 0.01f, -10.0f, 10.0f);
 			ImGui::SliderAngle("UVTRotate", &uvTransformSprite.rotate.z);
@@ -1838,7 +1914,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 			commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite);
 			commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
 
-			commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
+			commandList->DrawInstanced(6, 1, 0, 0);
 
 			//--------------------------------------
 			// ImGui描画
