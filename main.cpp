@@ -1679,7 +1679,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	commandList->IASetIndexBuffer(&indexBufferViewSprite);
 
 	// 描画！（DrawCall/ドローコール)。3頂点で1つのインスタンス。インスタンスについては今後
-	commandList->DrawInstanced(vertexCount, 1, 0, 0);
+	commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
+	//commandList->DrawInstanced(vertexCount, 1, 0, 0);
 	// 画面に描く処理はすべて終わり、画面に映す、状態を遷移
 		// 今回はRenderTargetからPresentにする
 	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
@@ -1906,15 +1907,16 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 			//--------------------------------------
 			// 三角形描画
 			//--------------------------------------
-			commandList->DrawInstanced(vertexCount, 1, 0, 0);
+			commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
+			//commandList->DrawInstanced(vertexCount, 1, 0, 0);
 
 
 			commandList->SetGraphicsRootSignature(rootSignature);
 			commandList->SetPipelineState(graphicsPipelineState);
 			commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite);
 			commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
-
-			commandList->DrawInstanced(6, 1, 0, 0);
+			commandList->IASetIndexBuffer(&indexBufferViewSprite);
+			commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
 
 			//--------------------------------------
 			// ImGui描画
@@ -1970,31 +1972,55 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 #endif
 
 	// 解放処理
-	CloseHandle(fenceEvent);
-	fence->Release();
+	// Resource
+	vertexResource->Release();
+	vertexResourceSprite->Release();
+	indexResourceSprite->Release();
+	materialResource->Release();
+	transformationResource->Release();
+	transformationMatrixResourceSprite->Release();
+	directionalLight->Release();
+	textureResource->Release();
+	textureResource2->Release();
+	depthstencilResource->Release();
+
+	// Shader
+	vertexShaderBlob->Release();
+	pixelShaderBlob->Release();
+	signatureBlob->Release();
+	if (errorBlob) {
+		errorBlob->Release();
+	}
+
+	// Pipeline
+	rootSignature->Release();
+	graphicsPipelineState->Release();
+
+	// DescriptorHeap
+	srvDescriptorHeap->Release();
 	rtvDescriptorHeap->Release();
-	swapChainResources[0]->Release();
-	swapChainResources[1]->Release();
-	swapChain->Release();
+	dsvDescriptorHeap->Release();
+
+	// Command
 	commandList->Release();
 	commandAllocator->Release();
 	commandQueue->Release();
+
+	// SwapChain
+	swapChainResources[0]->Release();
+	swapChainResources[1]->Release();
+	swapChain->Release();
+
+	// Fence
+	fence->Release();
+	CloseHandle(fenceEvent);
+
+	// 最後にDevice
 	device->Release();
+
+	// Adapter
 	useAdapter->Release();
 	dxgiFactory->Release();
-	vertexResource->Release();
-	graphicsPipelineState->Release();
-	signatureBlob->Release();
-	if (errorBlob)
-	{
-		errorBlob->Release();
-	}
-	rootSignature->Release();
-	pixelShaderBlob->Release();
-	vertexShaderBlob->Release();
-	materialResource->Release();
-	transformationResource->Release();
-
 #ifdef _DEBUG
 	debugController->Release();
 #endif // _DEBUG
