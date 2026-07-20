@@ -1569,6 +1569,13 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	transformationData->World = MakeIdentity4x4();
 	transformationData->WVP = MakeIdentity4x4();
 
+
+
+
+	ModelData modelData = LoadObjFile("resources,","plane.obj");
+
+
+
 	// DepthStecilTextureをウィンドウのサイズで作成
 	ID3D12Resource* depthstencilResource = CreateDepthStencilTextureResource(device, kClientWidth, kClientHeight);
 
@@ -1655,7 +1662,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	commandList->IASetIndexBuffer(&indexBufferViewSprite);
 
 	// 描画！（DrawCall/ドローコール)。3頂点で1つのインスタンス。インスタンスについては今後
-	commandList->DrawInstanced(vertexCount, 1, 0, 0);
+	commandList->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
 	// 画面に描く処理はすべて終わり、画面に映す、状態を遷移
 		// 今回はRenderTargetからPresentにする
 	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
