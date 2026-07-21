@@ -136,7 +136,7 @@ struct RiffHeader
 struct FormatChunk
 {
 	ChunkHeader chunk; // "fmt"
-	WAVEFORMAT fmt;   // 波系フォーマット
+	WAVEFORMATEX fmt;   // 波系フォーマット
 
 };
 
@@ -144,7 +144,7 @@ struct FormatChunk
 struct SoundData
 {
 	// 波系フォーマット
-	WAVEFORMAT wfex;
+	WAVEFORMATEX wfex;
 
 	// バッファの先頭アドレス
 	BYTE* pBuffer;
@@ -602,6 +602,109 @@ ModelData LoadObjFile(const std::string& directoryPath, const std::string& filen
 	return modelData;
 }
 
+
+SoundData SoundLoadWave(const char* filename) {
+
+	// 1. ファイルオープン
+	// ファイル入力ストリームのインスタンス
+	std::ifstream file;
+
+	// .wavファイルをバイナリモードで開く
+	file.open(filename, std::ios_base::binary);
+
+	// ファイルオープン失敗を検出する
+	assert(file.is_open());
+
+	// 2. .wavデータ読み込み
+	// RIFFヘッダーの読み込み
+	RiffHeader riff;
+	file.read((char*)&riff, sizeof(riff));
+
+	// ファイルがRIFFかチェック
+	if (strncmp(riff.type, "WAVE", 4) != 0) {
+		assert(0);
+	}
+
+	// Formatチャンクの読み込み
+	FormatChunk format = {};
+
+	// チャンクヘッダーの確認
+	file.read((char*)&format, sizeof(WriteCacheChangeUnknown));
+	if (strncmp(format.chunk.id, "fmt ", 4) != 0) {
+		assert(0);
+	}
+
+	// チャンク本体の読み込み
+	assert(format.chunk.size <= sizeof(format.fmt));
+	file.read((char*)&format.fmt, format.chunk.size);
+
+	// Dataチャンクの読み込み
+	ChunkHeader data;
+	file.read((char*)&data, sizeof(data));
+
+	// JUNKチャンクを検出した場合
+	if (strncmp(data.id, "JUNK", 4) == 0) {
+
+		// 読み取り位置をJUNKチャンクの終わりまで進める
+		file.seekg(data.size, std::ios_base::cur);
+
+		// 再読み込み
+		file.read((char*)&data, sizeof(data));
+	}
+
+	if (strncmp(data.id, "data", 4) != 0) {
+		assert(0);
+	}
+
+	// Dataチャンクのデータ部（波形データ)の読み込み
+	char* pBuffer = new char[data.size];
+	file.read(pBuffer, data.size);
+
+	// 3. ファイルクローズ
+	// Waveファイルを閉じる
+	file.close();
+
+	// 4. 読み込んだ音声データをreturn
+	SoundData soundData = {};
+
+	soundData.wfex = format.fmt;
+	soundData.pBuffer = reinterpret_cast<BYTE*>(pBuffer);
+	soundData.bufferSize = data.size;
+
+	return soundData;
+}
+
+// 音声データの解散
+void SoundUnload(SoundData* soundData) {
+
+	// バッファののメモリを解放
+	delete[] soundData->pBuffer;
+
+	soundData->pBuffer = 0;
+	soundData->bufferSize = 0;
+	soundData->wfex = {};
+}
+
+
+void SoundPlayWave(IXAudio2* xAudio2, const SoundData& soundData) {
+
+	HRESULT hr;
+
+	// 波形フォーマットを基にSourceVoiceの生成
+	IXAudio2SourceVoice* pSourceVoice = nullptr;
+	hr = xAudio2->CreateSourceVoice(&pSourceVoice,&soundData.wfex);
+	assert(SUCCEEDED(hr));
+
+	// 再生する波形データの設定
+	XAUDIO2_BUFFER buf{};
+	buf.pAudioData = soundData.pBuffer;
+	buf.AudioBytes = soundData.bufferSize;
+	buf.Flags = XAUDIO2_END_OF_STREAM;
+
+	// 波形データの再生
+	hr = pSourceVoice->SubmitSourceBuffer(&buf);
+	hr = pSourceVoice->Start();
+}
 
 
 IDxcBlob* CompileShader(
@@ -1867,6 +1970,16 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	// マスターボイス生成
 	hr = xAudio2->CreateMasteringVoice(&masterVoice);
 
+	// 音声読み込み
+	SoundData soundData1 = SoundLoadWave("Resources/Alarm01.wav");
+
+	// 音声再生
+	SoundPlayWave(xAudio2.Get(), soundData1);
+
+
+
+
+
 	//ウィンドウボタンの×ボタンが押されるまでループ
 	while (msg.message != WM_QUIT) {
 
@@ -2080,7 +2193,11 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 					INFINITE);
 			}
 		}
+		// xAudio2解放
+		xAudio2.Reset();
 
+		// 音声データ解放
+		SoundUnload(&soundData1);
 	}
 #ifdef USE_IMGUI
 	ImGui_ImplDX12_Shutdown();
