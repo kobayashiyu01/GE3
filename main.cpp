@@ -36,27 +36,6 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include <dbghelp.h>
 #pragma comment(lib, "Dbghelp.lib")
 
-class ResourceObject {
-
-public:
-	ResourceObject(ID3D12Resource* resource)
-		:resource_(resource)
-	{}
-
-	// デストラクタはオブジェクトの寿命が尽きたときに呼ばれる
-	~ResourceObject() {
-
-		// ここでReleaseを呼べばいい
-		if (resource_) {
-			resource_->Release();
-		}
-	}
-	ID3D12Resource* Get() { return resource_; }
-private:
-	ID3D12Resource* resource_;
-};
-
-
 struct Vector4
 {
 	float x, y, z, w;
@@ -138,6 +117,7 @@ struct D3DResourceLeakChecker
 		}
 	}
 };
+
 // チャンクヘッダ
 struct ChunkHeader
 {
@@ -152,7 +132,27 @@ struct RiffHeader
 	char type[4]; // "WAVE"
 };
 
+// FMTチャンク
+struct FormatChunk
+{
+	ChunkHeader chunk; // "fmt"
+	WAVEFORMAT fmt;   // 波系フォーマット
 
+};
+
+// 音声データ
+struct SoundData
+{
+	// 波系フォーマット
+	WAVEFORMAT wfex;
+
+	// バッファの先頭アドレス
+	BYTE* pBuffer;
+
+	// バッファのサイズ
+	unsigned int bufferSize;
+
+};
 
 float materialColor[4] =
 {
@@ -490,7 +490,7 @@ MaterialData LoadMaterialTemplateFile(const std::string& directoryPath, const st
 	// 1.中で必要になるファイルの宣言
 	MaterialData materialData; // 構築するMaterialData
 	std::string line; // ファイルから読んだ1行を格納するもの
-	
+
 	// 2.ファイルを開く
 	std::ifstream file(directoryPath + "/" + filename); // ファイルを開く
 	assert(file.is_open()); // とりあえず開けなかったら止める
@@ -680,9 +680,6 @@ IDxcBlob* CompileShader(
 	// 成功したログを出す
 	ALog(ConvertString(std::format(L"Compile Succeeded, path:{}, profile:{}\n", filePath, profile)));
 
-	// もう使わないリソースを解散
-	shaderSource->Release();
-	shaderResult->Release();
 
 	// 実行用のバイナリを返却
 	return shaderBlob;
@@ -1065,10 +1062,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 
 		// 指定したメッセージの表示を抑制する
 		infoQueue->AddStorageFilterEntries(&filter);
-
-		// 解放
-		infoQueue->Release();
-
 
 	}
 # endif
