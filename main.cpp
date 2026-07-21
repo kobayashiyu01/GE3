@@ -11,6 +11,8 @@
 #include <fstream>
 #include <sstream>
 #include <wrl.h>
+#include <xaudio2.h>
+#include <fstream>
 #include "externals/DirectXTex/DirectXTex.h"
 #ifdef USE_IMGUI
 #include "externals/imgui/imgui.h"
@@ -22,6 +24,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
+#pragma comment(lib,"xaudio2.lib")
 // ファイルやディレクトリに関する操作を行うライブラリ
 #include <filesystem>
 // 時間を扱うライブラリ
@@ -135,6 +138,20 @@ struct D3DResourceLeakChecker
 		}
 	}
 };
+// チャンクヘッダ
+struct ChunkHeader
+{
+	char id[4]; // チャンク毎のID
+	int32_t size; // チャンクサイズ
+};
+
+// RIFFヘッダチャンク
+struct RiffHeader
+{
+	ChunkHeader chunk;  // "RIFF"
+	char type[4]; // "WAVE"
+};
+
 
 
 float materialColor[4] =
@@ -564,8 +581,6 @@ ModelData LoadObjFile(const std::string& directoryPath, const std::string& filen
 				texcoord.y = 1.0f - texcoord.y;
 				VertexData vertex = { position,texcoord,normal };
 
-
-				modelData.vertices.push_back(vertex);
 				triangle[faceVertex] = { position,texcoord,normal };
 			}
 			// 頂点を逆順で登録することで、周り順を逆にする
@@ -852,6 +867,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	D3DResourceLeakChecker leakCheck;
 	CoInitializeEx(0, COINIT_MULTITHREADED);
 	SetUnhandledExceptionFilter(ExportDump);
+
+
+
+
 
 	WNDCLASS wc{};
 
@@ -1846,6 +1865,14 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 
 	bool useMonsterBall = false;
 
+	Microsoft::WRL::ComPtr<IXAudio2> xAudio2;
+	IXAudio2MasteringVoice* masterVoice;
+
+	// XAudioエンジンのインスタンスを生成
+	hr = XAudio2Create(&xAudio2, 0, XAUDIO2_DEFAULT_PROCESSOR);
+
+	// マスターボイス生成
+	hr = xAudio2->CreateMasteringVoice(&masterVoice);
 
 	//ウィンドウボタンの×ボタンが押されるまでループ
 	while (msg.message != WM_QUIT) {
