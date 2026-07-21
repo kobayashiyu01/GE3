@@ -692,7 +692,7 @@ void SoundPlayWave(IXAudio2* xAudio2, const SoundData& soundData) {
 
 	// 波形フォーマットを基にSourceVoiceの生成
 	IXAudio2SourceVoice* pSourceVoice = nullptr;
-	hr = xAudio2->CreateSourceVoice(&pSourceVoice,&soundData.wfex);
+	hr = xAudio2->CreateSourceVoice(&pSourceVoice, &soundData.wfex);
 	assert(SUCCEEDED(hr));
 
 	// 再生する波形データの設定
@@ -2031,7 +2031,14 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 			ImGui::SliderAngle("SphereRotateY", &transform.rotate.y);
 			ImGui::SliderAngle("SphereRotateZ", &transform.rotate.z);
 			ImGui::DragFloat3("CameraTranslate", &cameraTransform.scale.x, 0.01f, -20.0f);
+			if (ImGui::TreeNode("Ligthing")) {
 
+				ImGui::DragFloat3("DirectionalLightDirection", &directionalLightData->direction.x);
+				ImGui::DragFloat("DirectionalLightIntensity", &directionalLightData->intensity);
+				ImGui::DragFloat4("DirectionalLightColor", &directionalLightData->color.x);
+
+				ImGui::TreePop();
+			}
 
 
 			ImGui::ColorEdit4("Color", materialColor);
@@ -2193,11 +2200,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 					INFINITE);
 			}
 		}
-		// xAudio2解放
-		xAudio2.Reset();
 
-		// 音声データ解放
-		SoundUnload(&soundData1);
 	}
 #ifdef USE_IMGUI
 	ImGui_ImplDX12_Shutdown();
@@ -2206,6 +2209,11 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 #endif
 
 	// 解放処理
+	//xAudio2解放
+		xAudio2.Reset();
+
+	// 音声データ解放
+	SoundUnload(&soundData1);
 	CloseHandle(fenceEvent);
 	CloseWindow(hwnd);
 	CoUninitialize();
