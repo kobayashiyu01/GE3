@@ -395,15 +395,8 @@ void DebugCamera::Update(Vector2 mouseDelta) {
 		Matrix4x4 rotateMatrix = MakeAffineMatrix(scale_, { 0,0,0 }, translatetion_);
 		Matrix4x4 scaleMatrix = MakeAffineMatrix(scale_, { 0,0,0 }, translatetion_);
 
-		Matrix4x4 matRotDelta = MakeIdentity4x4();
 
-		matRotDelta = Multiply(matRotDelta, MakeRotateXMatrix(mouseDelta.x));
-
-		matRotDelta = Multiply(matRotDelta, MakeRotateYMatrix(mouseDelta.y));
-
-		matRot_ = Multiply(matRotDelta, matRot_);
-
-		worldMatrix_ = MakeAffineMatrix(scale_, { 0,0,0 }, translatetion_);
+		//worldMatrix_ = MakeAffineMatrix(scale_, { 0,0,0 }, translatetion_);
 
 
 
@@ -422,15 +415,9 @@ void DebugCamera::Update(Vector2 mouseDelta) {
 		Matrix4x4 rotateMatrix = MakeAffineMatrix(scale_, { 0,0,0 }, translatetion_);
 		Matrix4x4 scaleMatrix = MakeAffineMatrix(scale_, { 0,0,0 }, translatetion_);
 
-		Matrix4x4 matRotDelta = MakeIdentity4x4();
+	
 
-		matRotDelta = Multiply(matRotDelta, MakeRotateXMatrix(mouseDelta.x));
-
-		matRotDelta = Multiply(matRotDelta, MakeRotateYMatrix(mouseDelta.y));
-
-		matRot_ = Multiply(matRotDelta, matRot_);
-
-		worldMatrix_ = MakeAffineMatrix(scale_, { 0,0,0 }, translatetion_);
+		//worldMatrix_ = MakeAffineMatrix(scale_, { 0,0,0 }, translatetion_);
 
 
 
@@ -450,15 +437,9 @@ void DebugCamera::Update(Vector2 mouseDelta) {
 		Matrix4x4 rotateMatrix = MakeAffineMatrix(scale_, { 0,0,0 }, translatetion_);
 		Matrix4x4 scaleMatrix = MakeAffineMatrix(scale_, { 0,0,0 }, translatetion_);
 
-		Matrix4x4 matRotDelta = MakeIdentity4x4();
 
-		matRotDelta = Multiply(matRotDelta, MakeRotateXMatrix(mouseDelta.x));
 
-		matRotDelta = Multiply(matRotDelta, MakeRotateYMatrix(mouseDelta.y));
-
-		matRot_ = Multiply(matRotDelta, matRot_);
-
-		worldMatrix_ = MakeAffineMatrix(scale_, { 0,0,0 }, translatetion_);
+		//worldMatrix_ = MakeAffineMatrix(scale_, { 0,0,0 }, translatetion_);
 
 
 
@@ -478,15 +459,9 @@ void DebugCamera::Update(Vector2 mouseDelta) {
 		Matrix4x4 rotateMatrix = MakeAffineMatrix(scale_, { 0,0,0 }, translatetion_);
 		Matrix4x4 scaleMatrix = MakeAffineMatrix(scale_, { 0,0,0 }, translatetion_);
 
-		Matrix4x4 matRotDelta = MakeIdentity4x4();
+	
 
-		matRotDelta = Multiply(matRotDelta, MakeRotateXMatrix(mouseDelta.x));
-
-		matRotDelta = Multiply(matRotDelta, MakeRotateYMatrix(mouseDelta.y));
-
-		matRot_ = Multiply(matRotDelta, matRot_);
-
-		worldMatrix_ = MakeAffineMatrix(scale_, { 0,0,0 }, translatetion_);
+		//worldMatrix_ = MakeAffineMatrix(scale_, { 0,0,0 }, translatetion_);
 
 
 
@@ -503,15 +478,9 @@ void DebugCamera::Update(Vector2 mouseDelta) {
 		Matrix4x4 rotateMatrix = MakeAffineMatrix(scale_, { 0,0,0 }, translatetion_);
 		Matrix4x4 scaleMatrix = MakeAffineMatrix(scale_, { 0,0,0 }, translatetion_);
 
-		Matrix4x4 matRotDelta = MakeIdentity4x4();
+		
 
-		matRotDelta = Multiply(matRotDelta, MakeRotateXMatrix(mouseDelta.x));
-
-		matRotDelta = Multiply(matRotDelta, MakeRotateYMatrix(mouseDelta.y));
-
-		matRot_ = Multiply(matRotDelta, matRot_);
-
-		worldMatrix_ = MakeAffineMatrix(scale_, { 0,0,0 }, translatetion_);
+		//worldMatrix_ = MakeAffineMatrix(scale_, { 0,0,0 }, translatetion_);
 
 
 
@@ -529,15 +498,9 @@ void DebugCamera::Update(Vector2 mouseDelta) {
 		Matrix4x4 rotateMatrix = MakeAffineMatrix(scale_, { 0,0,0 }, translatetion_);
 		Matrix4x4 scaleMatrix = MakeAffineMatrix(scale_, { 0,0,0 }, translatetion_);
 
-		Matrix4x4 matRotDelta = MakeIdentity4x4();
+	
 
-		matRotDelta = Multiply(matRotDelta, MakeRotateXMatrix(mouseDelta.x));
-
-		matRotDelta = Multiply(matRotDelta, MakeRotateYMatrix(mouseDelta.y));
-
-		matRot_ = Multiply(matRotDelta, matRot_);
-
-		worldMatrix_ = MakeAffineMatrix(scale_, { 0,0,0 }, translatetion_);
+		 //worldMatrix_ = MakeAffineMatrix(scale_, { 0,0,0 }, translatetion_);
 
 		translatetion_.x += move.x;
 		translatetion_.y += move.y;
