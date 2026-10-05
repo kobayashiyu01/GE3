@@ -22,9 +22,25 @@ public: // メンバ関数
 	// 更新
 	void Updata();
 
+	// キーの押下を判定する関数
+	bool PushKey(BYTE keyNumber);
+
+	// キーの離上を判定する関数
+	bool TriggerKey(BYTE keyNumber);
+
 private:
+
+	// DirectInputの初期化
+	ComPtr<IDirectInput8> directInput;
 
 	// キーボードのデバイス
 	ComPtr<IDirectInputDevice8> keyboard; // キーボード 
+
+	// 全キーの入力状態を取得する
+	BYTE key[256] = {};
+
+	// 前回のキーの入力状態を取得する
+	BYTE keyPre[256] = {};
+
 };
 

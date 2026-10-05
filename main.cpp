@@ -746,7 +746,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 {
 
 
-	assert(false && &"assertのテストだよ");
+	//assert(false && &"assertのテストだよ");
 
 	D3DResourceLeakChecker leakCheck;
 	CoInitializeEx(0, COINIT_MULTITHREADED);
@@ -1104,8 +1104,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	Input* input = nullptr;
 	input = new Input();
 	input->Initialize(wc.hInstance, hwnd);
-	delete input;
 	
+
 
 	///////////////////////////////////////////////////////////////////////////////////
 
@@ -1831,10 +1831,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 			input->Updata();
 
 			// 数字の0キーが押されていたら
-			//if (key[DIK_0])
-			//{
-			//	OutputDebugStringA("Hit 0\n"); // 出力ウィンドウに「Hit 0」と表示
-			//}
+			if (input->PushKey(DIK_0))
+			{
+				OutputDebugStringA("Hit 0\n"); // 出力ウィンドウに「Hit 0」と表示
+			}
 			debugCamera->Update(/*{io.MouseDelta.x, io.MouseDelta.y}*/);
 
 			//ゲームの処理
@@ -2107,6 +2107,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 #endif
 
 	// 解放処理
+	delete input;
+	 
 	//xAudio2解放
 	xAudio2.Reset();
 
