@@ -22,12 +22,7 @@
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 #pragma comment(lib,"dxcompiler.lib")
 #endif 
-#define DIRECTINPUT_VERSION 0x0800 // DirectInputのバージョン指定
-#include <dinput.h>
-
-#pragma comment(lib, "dinput8.lib")
-#pragma comment(lib, "dxguid.lib")
-
+#include "Input.h"
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
@@ -1104,22 +1099,13 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	hr = dxcUtils->CreateDefaultIncludeHandler(&includehandler);
 	assert(SUCCEEDED(hr));
 
+	// Input呼び出し
 
-	// DirectInputの初期化
-	IDirectInput8* directInput = nullptr;
-
-	hr = DirectInput8Create(wc.hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8, (void**)&directInput, nullptr);
-
-	IDirectInputDevice8* keyboard = nullptr;
-	hr = directInput->CreateDevice(GUID_SysKeyboard, &keyboard, NULL);
-	assert(SUCCEEDED(hr));
-
-	hr = keyboard->SetDataFormat(&c_dfDIKeyboard); // 標準形式
-	assert(SUCCEEDED(hr));
-
-	// 排他制御レベルのセット
-	hr = keyboard->SetCooperativeLevel(hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY);
-	assert(SUCCEEDED(hr));
+	Input* input = nullptr;
+	input = new Input();
+	input->Initialize(wc.hInstance, hwnd);
+	delete input;
+	
 
 	///////////////////////////////////////////////////////////////////////////////////
 
@@ -1842,17 +1828,13 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 		else {
 
 			// キーボード情報の取得開始
-			keyboard->Acquire();
-
-			// 全キーの入力状態を取得する
-			BYTE key[256] = {};
-			keyboard->GetDeviceState(sizeof(key), key);
+			input->Updata();
 
 			// 数字の0キーが押されていたら
-			if (key[DIK_0])
-			{
-				OutputDebugStringA("Hit 0\n"); // 出力ウィンドウに「Hit 0」と表示
-			}
+			//if (key[DIK_0])
+			//{
+			//	OutputDebugStringA("Hit 0\n"); // 出力ウィンドウに「Hit 0」と表示
+			//}
 			debugCamera->Update(/*{io.MouseDelta.x, io.MouseDelta.y}*/);
 
 			//ゲームの処理
