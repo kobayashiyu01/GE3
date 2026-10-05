@@ -750,6 +750,9 @@ void UploadTextureData(const Microsoft::WRL::ComPtr<ID3D12Resource>& texture, co
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 {
 
+
+	assert(false && &"assertのテストだよ");
+
 	D3DResourceLeakChecker leakCheck;
 	CoInitializeEx(0, COINIT_MULTITHREADED);
 	SetUnhandledExceptionFilter(ExportDump);
