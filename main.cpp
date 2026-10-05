@@ -1850,7 +1850,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 			{
 				OutputDebugStringA("Hit 0\n"); // 出力ウィンドウに「Hit 0」と表示
 			}
-			debugCamera->Update({io.MouseDelta.x, io.MouseDelta.y});
+			debugCamera->Update(/*{io.MouseDelta.x, io.MouseDelta.y}*/);
 
 			//ゲームの処理
 			//transform.rotate.y += 0.03f;

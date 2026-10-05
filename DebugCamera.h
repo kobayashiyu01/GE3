@@ -49,7 +49,7 @@ private:
 public:
 
 	void Initialize();
-	void Update(Vector2 mouseDelta);
+	void Update();
 
 	Matrix4x4 GetViewMatrix();
 };

@@ -303,7 +303,7 @@ void DebugCamera::Initialize() {
 	worldMatrix_ = MakeAffineMatrix({ 1.0f,1.0f,1.0f }, { 0,0,0 }, translatetion_);
 }
 
-void DebugCamera::Update(Vector2 mouseDelta) {
+void DebugCamera::Update() {
 
 	//HWND hwnd = GetActiveWindow();
 
@@ -322,55 +322,55 @@ void DebugCamera::Update(Vector2 mouseDelta) {
 
 
 	//const float rotateSpeed = 0.005f;
-	if (GetAsyncKeyState(VK_LBUTTON) & 0x8000) {
+	//if (GetAsyncKeyState(VK_LBUTTON) & 0x8000) {
 
 
-		if (mouseDelta.y != 0.0f)
-		{
-			// X軸周りの角度を計算する
-			const float rotateSpeed = 0.005f;
-			Matrix4x4 matRotDelta = MakeIdentity4x4();
+	//	if (mouseDelta.y != 0.0f)
+	//	{
+	//		// X軸周りの角度を計算する
+	//		const float rotateSpeed = 0.005f;
+	//		Matrix4x4 matRotDelta = MakeIdentity4x4();
 
-			matRotDelta = Multiply(MakeRotateXMatrix(mouseDelta.x * rotateSpeed), matRotDelta);
+	//		matRotDelta = Multiply(MakeRotateXMatrix(mouseDelta.x * rotateSpeed), matRotDelta);
 
-			//matRotDelta = Multiply(matRotDelta, MakeRotateYMatrix(mouseDelta.y * rotateSpeed));
+	//		//matRotDelta = Multiply(matRotDelta, MakeRotateYMatrix(mouseDelta.y * rotateSpeed));
 
-			matRot_ = Multiply(matRotDelta, matRot_);
-			//rotatetion_.x += mouseDelta.y * rotateSpeed;
-		}
+	//		matRot_ = Multiply(matRotDelta, matRot_);
+	//		//rotatetion_.x += mouseDelta.y * rotateSpeed;
+	//	}
 
-		if (mouseDelta.x != 0.0f)
-		{
-			// Y軸周りの角度を計算する
-			const float rotateSpeed = 0.005f;
-			Matrix4x4 matRotDelta = MakeIdentity4x4();
+	//	if (mouseDelta.x != 0.0f)
+	//	{
+	//		// Y軸周りの角度を計算する
+	//		const float rotateSpeed = 0.005f;
+	//		Matrix4x4 matRotDelta = MakeIdentity4x4();
 
-			//matRotDelta = Multiply(MakeRotateXMatrix(mouseDelta.x * rotateSpeed), matRotDelta);
+	//		//matRotDelta = Multiply(MakeRotateXMatrix(mouseDelta.x * rotateSpeed), matRotDelta);
 
-			matRotDelta = Multiply(MakeRotateYMatrix(mouseDelta.y * rotateSpeed), matRotDelta);
+	//		matRotDelta = Multiply(MakeRotateYMatrix(mouseDelta.y * rotateSpeed), matRotDelta);
 
-			matRot_ = Multiply(matRotDelta, matRot_);
-			//rotatetion_.y += mouseDelta.x * rotateSpeed;
-		}
+	//		matRot_ = Multiply(matRotDelta, matRot_);
+	//		//rotatetion_.y += mouseDelta.x * rotateSpeed;
+	//	}
 
-		//if (GetAsyncKeyState(VK_RBUTTON) & 0x8000)
-		//{
-		//	if (mouseDelta.x != 0.0f)
-		//	{
-		//		// Z軸周りの角度を計算する
-		//		const float rotateSpeed = 0.005f;
-		//		Matrix4x4 matRotDelta = MakeIdentity4x4();
+	//	//if (GetAsyncKeyState(VK_RBUTTON) & 0x8000)
+	//	//{
+	//	//	if (mouseDelta.x != 0.0f)
+	//	//	{
+	//	//		// Z軸周りの角度を計算する
+	//	//		const float rotateSpeed = 0.005f;
+	//	//		Matrix4x4 matRotDelta = MakeIdentity4x4();
 
-		//		matRotDelta = Multiply(matRotDelta, MakeRotateXMatrix(mouseDelta.x * rotateSpeed));
+	//	//		matRotDelta = Multiply(matRotDelta, MakeRotateXMatrix(mouseDelta.x * rotateSpeed));
 
-		//		matRotDelta = Multiply(matRotDelta, MakeRotateYMatrix(mouseDelta.y * rotateSpeed));
+	//	//		matRotDelta = Multiply(matRotDelta, MakeRotateYMatrix(mouseDelta.y * rotateSpeed));
 
-		//		matRot_ = Multiply(matRotDelta, matRot_);
+	//	//		matRot_ = Multiply(matRotDelta, matRot_);
 
-		//	}
-		//}
+	//	//	}
+	//	//}
 
-	}
+	//}
 
 
 	//if (GetAsyncKeyState(VK_LBUTTON) & 0x8000)
