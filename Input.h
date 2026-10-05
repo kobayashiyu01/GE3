@@ -21,7 +21,7 @@ public: // メンバ関数
 	void Initialize(HINSTANCE hInstance, HWND hwnd);
 
 	// 更新
-	void Updata();
+	void Update();
 
 	// キーの押下を判定する関数
 	bool PushKey(BYTE keyNumber);

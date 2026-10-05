@@ -41,7 +41,7 @@ bool Input::TriggerKey(BYTE keyNumber)
 	return false;
 }
 
-void Input::Updata()
+void Input::Update()
 {
 	// 更新処理
 

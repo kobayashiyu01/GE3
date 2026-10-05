@@ -1828,7 +1828,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 		else {
 
 			// キーボード情報の取得開始
-			input->Updata();
+			input->Update();
 
 			// 数字の0キーが押されていたら
 			if (input->TriggerKey(DIK_0))
