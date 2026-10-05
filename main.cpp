@@ -2105,7 +2105,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
 #endif
-
+	  
 	// 解放処理
 	delete input;
 	 
