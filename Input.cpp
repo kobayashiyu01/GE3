@@ -35,7 +35,7 @@ bool Input::PushKey(BYTE keyNumber)
 bool Input::TriggerKey(BYTE keyNumber)
 {
 	// 指定キーを離していればtrueを返す
-	if (!key[keyNumber]) {
+	if (!key[keyNumber] && keyPre[keyNumber]) {
 		return true;
 	}
 	return false;

@@ -1831,7 +1831,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 			input->Updata();
 
 			// 数字の0キーが押されていたら
-			if (input->PushKey(DIK_0))
+			if (input->TriggerKey(DIK_0))
 			{
 				OutputDebugStringA("Hit 0\n"); // 出力ウィンドウに「Hit 0」と表示
 			}
