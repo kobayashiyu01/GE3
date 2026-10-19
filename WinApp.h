@@ -43,6 +43,5 @@ private:
 	//ウィンドウの生成
 	HWND hwnd = nullptr;
 
-
 };
 
