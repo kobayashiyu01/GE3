@@ -1441,112 +1441,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
 	std::memcpy(vertexData, modelData.vertices.data(), sizeof(VertexData) * modelData.vertices.size());
 
-	//const float pi = 3.14159265f;
-
-	//const float kLonEvery = pi * 2.0f / float(kSubdivision);// 経度分割1つ分の角度
-
-	//const float kLatEvery = pi / float(kSubdivision); // 緯度分割1つ分の角度
-
-
-	//// 緯度の方向に分割 -π/2 ~ π/2
-	//for (uint32_t latIndex = 0; latIndex < kSubdivision; ++latIndex)
-	//{
-	//	float lat = -pi / 2.0f + kLatEvery * latIndex;
-
-	//	// 経度の方向に分割 0 ~ 2π
-	//	for (uint32_t lonIndex = 0; lonIndex < kSubdivision; ++lonIndex)
-	//	{
-
-	//		uint32_t start = (latIndex * kSubdivision + lonIndex) * 6;
-
-
-	//		float lon = lonIndex * kLonEvery;
-
-	//		// a
-	//		vertexData[start].position.x = cos(lat) * cos(lon);
-	//		vertexData[start].position.y = sin(lat);
-	//		vertexData[start].position.z = cos(lat) * sin(lon);
-	//		vertexData[start].position.w = 1.0f;
-	//		vertexData[start].texcoord = { 1.0f - float(lonIndex) / kSubdivision,
-	//		 1.0f - float(latIndex) / kSubdivision };
-
-
-	//		// b
-	//		vertexData[start + 1].position.x = cos(lat + kLatEvery) * cos(lon);
-	//		vertexData[start + 1].position.y = sin(lat + kLatEvery);
-	//		vertexData[start + 1].position.z = cos(lat + kLatEvery) * sin(lon);
-	//		vertexData[start + 1].position.w = 1.0f;
-	//		vertexData[start + 1].texcoord = { 1.0f - float(lonIndex) / kSubdivision,
-	//		  1.0f - float(latIndex + 1) / kSubdivision };
-
-
-	//		// c
-	//		vertexData[start + 2].position.x = cos(lat) * cos(lon + kLonEvery);
-	//		vertexData[start + 2].position.y = sin(lat);
-	//		vertexData[start + 2].position.z = cos(lat) * sin(lon + kLonEvery);
-	//		vertexData[start + 2].position.w = 1.0f;
-	//		vertexData[start + 2].texcoord = { 1.0f - float(lonIndex + 1) / kSubdivision,
-	//		 1.0f - float(latIndex) / kSubdivision };
-
-
-	//		// c
-	//		vertexData[start + 3] = vertexData[start + 2];
-	//		vertexData[start + 3].texcoord =
-	//		{
-	//			1.0f - float(lonIndex + 1) / kSubdivision,
-	//			1.0f - float(latIndex) / kSubdivision
-	//		};
-	//		// b
-	//		vertexData[start + 4] = vertexData[start + 1];
-	//		vertexData[start + 4].texcoord = { 1.0f - float(lonIndex) / kSubdivision,
-	//		1.0f - float(latIndex + 1) / kSubdivision };
-	//		// d
-	//		vertexData[start + 5].position.x = cos(lat + kLatEvery) * cos(lon + kLonEvery);
-	//		vertexData[start + 5].position.y = sin(lat + kLatEvery);
-	//		vertexData[start + 5].position.z = cos(lat + kLatEvery) * sin(lon + kLonEvery);
-	//		vertexData[start + 5].position.w = 1.0f;
-	//		vertexData[start + 5].texcoord = { 1.0f - float(lonIndex + 1) / kSubdivision,
-	//		1.0f - float(latIndex + 1) / kSubdivision };
-
-	//		vertexData[start].normal = {
-	//		vertexData[start].position.x,
-	//		vertexData[start].position.y,
-	//		vertexData[start].position.z
-	//		};
-	//		vertexData[start + 1].normal = {
-	//		vertexData[start + 1].position.x,
-	//		vertexData[start + 1].position.y,
-	//		vertexData[start + 1].position.z
-	//		};
-
-	//		vertexData[start + 2].normal = {
-	//		vertexData[start + 2].position.x,
-	//		vertexData[start + 2].position.y,
-	//		vertexData[start + 2].position.z
-	//		};
-
-	//		vertexData[start + 3].normal = {
-	//		vertexData[start + 3].position.x,
-	//		vertexData[start + 3].position.y,
-	//		vertexData[start + 3].position.z
-	//		};
-
-	//		vertexData[start + 4].normal = {
-	//		vertexData[start + 4].position.x,
-	//		vertexData[start + 4].position.y,
-	//		vertexData[start + 4].position.z
-	//		};
-
-	//		vertexData[start + 5].normal = {
-	//		vertexData[start + 5].position.x,
-	//		vertexData[start + 5].position.y,
-	//		vertexData[start + 5].position.z
-	//		};
-
-
-	//	}
-	//}
-
 
 	// マテリアル用のリソースを作る。今回はcolor1つ分のサイズを用意する
 	Microsoft::WRL::ComPtr<ID3D12Resource> materialResourceObj = CreateBufferResource(device, sizeof(Material));
@@ -1575,13 +1469,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	materialDataSprite->color = { 1.0f, 1.0f, 1.0f, 1.0f };
 	materialDataSprite->enableLighting = 0;
 	materialDataSprite->uvTransform = MakeIdentity4x4();
-
-
-
-
-
-
-
 
 	// DepthStecilTextureをウィンドウのサイズで作成
 	Microsoft::WRL::ComPtr<ID3D12Resource> depthstencilResource = CreateDepthStencilTextureResource(device, WinApp::kClientWidth, WinApp::kClientHeight);
@@ -1711,14 +1598,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 
 	// 誰も捕捉しなかった場合に(Unhandled)、補足する関数を登録
 	// main関数始まってすぐに登録すると良い
-	//////////////////////////////////////////////////////////////////////////////////////////
+	
 	MSG msg{};
-
-	////////////////////////わざとクラッシュさせるコード。デバッグ用
-	//uint32_t* p = nullptr;
-	//*p = 100;
-	////////////////////////
-
 
 	Transforms transform{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
 
@@ -1777,13 +1658,13 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 
 
 	//ウィンドウボタンの×ボタンが押されるまでループ
-	while (msg.message != WM_QUIT) {
+	while (true) {
 
-		// Windowにメッセージが来ていたら最優先で処理させる
-		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
-
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
+		// Windowsのメッセージ処理
+		if (winApp->ProcessMessage()) {
+			
+			// ゲームループを抜ける
+			break;
 		}
 		else {
 

@@ -31,6 +31,8 @@ public:
 
 	HINSTANCE GetHInstance() const { return wc.hInstance; }
 
+	bool ProcessMessage();
+
 private:
 
 	HRESULT hr = CoInitializeEx(0, COINIT_MULTITHREADED);
