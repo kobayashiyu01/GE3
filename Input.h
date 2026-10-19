@@ -26,7 +26,7 @@ public: // メンバ関数
 	// キーの押下を判定する関数
 	bool PushKey(BYTE keyNumber);
 
-	// キーの離上を判定する関数
+	// キーを押したか判定する関数
 	bool TriggerKey(BYTE keyNumber);
 
 private:
