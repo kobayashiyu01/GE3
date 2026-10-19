@@ -15,6 +15,7 @@
 #include "externals/DirectXTex/DirectXTex.h"
 #include "WinApp.h"
 #include "Input.h"
+#pragma comment(lib,"dxcompiler.lib")
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
@@ -1062,8 +1063,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 
 	Input* input = nullptr;
 	input = new Input();
-	input->Initialize(winApp->GetHInstance(), winApp->GetHwnd());
-	
+	input->Initialize(winApp);
+
 
 
 	///////////////////////////////////////////////////////////////////////////////////
@@ -2064,19 +2065,23 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
 #endif
-	  
+
+
+	winApp->Finalize();
+
 	// 解放処理
 	delete input;
-	delete winApp;	
-	 
+	delete winApp;
+	winApp = nullptr;
+
 	//xAudio2解放
 	xAudio2.Reset();
 
 	// 音声データ解放
 	SoundUnload(&soundData1);
 	CloseHandle(fenceEvent);
-	CloseWindow(winApp->GetHwnd());
-	CoUninitialize();
+
+
 
 	return 0;
 }
