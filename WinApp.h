@@ -11,38 +11,33 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 class WinApp
 {
 public:
+	
+	WNDCLASS wc{};
 	static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
+	// クライアント領域のサイズ
+	static const int32_t kClientWidth = 1280;
+	static const int32_t kClientHeight = 720;
 
 public:
-	WNDCLASS wc{};
+	
 	void Initialize();
 
 	void Update();
 
+	HWND GetHwnd()const { return hwnd; }
+
+	HINSTANCE GetHInstance() const { return wc.hInstance; }
+
 private:
 
-	// クライアント領域のサイズ
-	int32_t kClientWidth = 1280;
-	int32_t kClientHeight = 720;
+	HRESULT hr = CoInitializeEx(0, COINIT_MULTITHREADED);
 
 	// ウィンドウサイズを表す構造体にクライアント領域を入れる
 	RECT wrc = { 0,0,kClientWidth,kClientHeight };
 
-
 	//ウィンドウの生成
-	HWND hwnd = CreateWindow(
-		wc.lpszClassName,         // クラス名
-		L"CG2",                   // タイトルバーの文字
-		WS_OVERLAPPEDWINDOW,      // ウィンドウスタイル
-		CW_USEDEFAULT,            // X座標
-		CW_USEDEFAULT,            // Y座標
-		wrc.right - wrc.left,     // ウィンドウ横幅
-		wrc.bottom - wrc.top,     // ウィンドウ縦幅
-		nullptr,                  // 親ウィンドウハンドル
-		nullptr,                  // メニューハンドル
-		wc.hInstance,             // インスタンスハンドル
-		nullptr);                 // オプション
+	HWND hwnd = nullptr;
 
 
 };
