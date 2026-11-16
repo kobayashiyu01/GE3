@@ -24,13 +24,18 @@ public:
 	void DXCInitialize();
 	void ImGuiInitialize();
 	void Update();
+	void PreDraw();
+	void PostDraw();
 	void Finalize();
+
 private:
 
 	WinApp* winApp = nullptr;
 
 	Microsoft::WRL::ComPtr<ID3D12Device> device;
 	Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory;
+
+	Microsoft::WRL::ComPtr<ID3D12InfoQueue> infoQueue;
 
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocator;
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList;
@@ -71,7 +76,13 @@ private:
 	IDxcCompiler3* dxcCompiler;
 	IDxcIncludeHandler* includehandler;
 
-	UINT backBufferIndex = 0;
+	int backBufferIndex = 0;
+
+	D3D12_RESOURCE_BARRIER barrier{};
+
+	Microsoft::WRL::ComPtr<ID3D12Resource> CreateDepthStencilTextureResource(int32_t width, int32_t height);
+
+public:
 
 	static D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& descriptorHeap, uint32_t descriptorSize, uint32_t index);
 
@@ -85,9 +96,19 @@ private:
 		);
 
 	D3D12_CPU_DESCRIPTOR_HANDLE GetSRVCPUDescriptorHandle(uint32_t index);
+	D3D12_GPU_DESCRIPTOR_HANDLE GetSRVGPUDescriptorHandle(uint32_t index);
 
+	ID3D12Device* GetDevice() { return device.Get(); }
+	ID3D12GraphicsCommandList* GetCommandList() { return commandList.Get(); }
+	ID3D12CommandQueue* GetCommandQueue() { return commandQueue.Get(); }
+	IDXGISwapChain4* GetSwapChain() { return swapChain.Get(); }
+	ID3D12Fence* GetFence() { return fence.Get(); }
+	IDxcUtils* GetDxcUtils() { return dxcUtils; }
+	IDxcCompiler3* GetDxcCompiler() { return dxcCompiler; }
+	IDxcIncludeHandler* GetIncludeHandler() { return includehandler; }
+	ID3D12DescriptorHeap* GetSRVDescriptorHeap() { return srvDescriptorHeap.Get(); };
+	D3D12_RESOURCE_BARRIER* GetBarrier() { return &barrier; }
 
-	Microsoft::WRL::ComPtr<ID3D12Resource> CreateDepthStencilTextureResource(int32_t width, int32_t height);
 };
 
 

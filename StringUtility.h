@@ -7,6 +7,4 @@ namespace stringUtility {
 	// stringをstringに変換する
 	std::string ComverString(const std::wstring& str);
 };
-class StringUtility
-{};
 
