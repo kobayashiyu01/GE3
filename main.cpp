@@ -11,10 +11,10 @@
 #include <wrl.h>
 #include <xaudio2.h>
 #include "DebugCamera.h"
-#include <fstream>
 #include "externals/DirectXTex/DirectXTex.h"
 #include "WinApp.h"
 #include "Input.h"
+#include "DirectXCommon.h"
 #pragma comment(lib,"dxcompiler.lib")
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "d3d12.lib")
@@ -25,7 +25,6 @@
 // 時間を扱うライブラリ
 #include <chrono>
 // ファイルに書いたり読んだりするライブラリ
-#include <fstream>
 
 // Debug用のあれやこれやを使えるようにする
 #include <dbghelp.h>
@@ -755,7 +754,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	winApp = new WinApp();
 	winApp->Initialize();
 
-
+	DirectXCommon* dxCommon = nullptr;
+	dxCommon = new DirectXCommon();
+	dxCommon->Initialize(winApp);
 
 	/////////////////////////////////////////////////////////////↑ここまでWindow処理
 
@@ -1261,6 +1262,21 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	//どのように画面に色を打ち込むかの設定(気にしなくて良い)
 	graphicsPipelineStateDesc.SampleDesc.Count = 1;
 	graphicsPipelineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
+	// DepthstencilStateの設定
+	D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
+
+	// Depthの機能を有効にする
+	depthStencilDesc.DepthEnable = true;
+
+	// 書き込みします
+	depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+
+	// 比較関数はLessWqual。つまり、近ければ描画される
+	depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+
+	// DepthStencilの設定
+	graphicsPipelineStateDesc.DepthStencilState = depthStencilDesc;
+	graphicsPipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
 	//実際に生成
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> graphicsPipelineState = nullptr;
@@ -1268,35 +1284,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 		IID_PPV_ARGS(&graphicsPipelineState));
 	assert(SUCCEEDED(hr));
 
-	//// 頂点リソース用のバイナリヒープ設定
-	//D3D12_HEAP_PROPERTIES uploadHeapProperties{};
-	//uploadHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD; // UploadHeap 5
 
-	//// 頂点リソースの設定
-	//D3D12_RESOURCE_DESC vertexResourceDesc{};
-
-	////バッファリソース。テクスチャの場合はまた別の設定をする
-	//vertexResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-	//vertexResourceDesc.Width = sizeof(Vector4) * 3;//リソースのサイズ。今回はVector4を3頂点分
-
-	//// バッファの場合はこれらは1にする決まり
-	//vertexResourceDesc.Height = 1;
-	//vertexResourceDesc.DepthOrArraySize = 1;
-	//vertexResourceDesc.MipLevels = 1;
-	//vertexResourceDesc.SampleDesc.Count = 1;
-
-	//// バッファの場合はこれにする決まり
-	//vertexResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-
-	//// Sprite用のマテリアルリソースを作る
-	//Microsoft::WRL::ComPtr<ID3D12Resource> materialResourceSprite = CreateBufferResource(device, sizeof(Material));
-
-	//Material* materialSprite = nullptr;
-
-	//materialResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&materialSprite));
-
-	//materialSprite->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-	//materialSprite->enableLighting = false;
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> indexResourceSprite = CreateBufferResource(device, sizeof(uint32_t) * 6);
 
@@ -1371,14 +1359,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	vertexDataSprite[5].texcoord = { 1.0f,1.0f };
 	vertexDataSprite[5].normal = { 0.0f,0.0f,-1.0f };
 
-	/*Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource = CreateBufferResource(device, sizeof(TransformationMatrix));
-
-	TransformationMatrix* transformationData = nullptr;
-
-	transformationResource->Map(0, nullptr, reinterpret_cast<void**>(&transformationData));
-
-	transformationData->World = MakeIdentity4x4();
-	transformationData->WVP = MakeIdentity4x4();*/
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> transformationMaterialResourceObj = CreateBufferResource(device, sizeof(TransformationMatrix));
 
@@ -1484,27 +1464,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	// DSVHeapの先頭にDSVを作る
 	device->CreateDepthStencilView(depthstencilResource.Get(), &dsvDesc, dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 
-	// DepthstencilStateの設定
-	D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
-
-	// Depthの機能を有効にする
-	depthStencilDesc.DepthEnable = true;
-
-	// 書き込みします
-	depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-
-	// 比較関数はLessWqual。つまり、近ければ描画される
-	depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
-
-	// DepthStencilの設定
-	graphicsPipelineStateDesc.DepthStencilState = depthStencilDesc;
-	graphicsPipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
-
-	hr = device->CreateGraphicsPipelineState(
-		&graphicsPipelineStateDesc,
-		IID_PPV_ARGS(&graphicsPipelineState));
-
-	assert(SUCCEEDED(hr));
 	// 描画先のRTVとDSVを設定する
 	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 	commandList->OMSetRenderTargets(1, &rtvHandles[backBufferIndex], false, &dsvHandle);
