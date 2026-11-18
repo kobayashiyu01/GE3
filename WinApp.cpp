@@ -1,5 +1,7 @@
 #include "WinApp.h"
 
+#pragma comment(lib,"winmm.lib")
+
 LRESULT CALLBACK WinApp::WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
 	if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam)) {
@@ -49,6 +51,10 @@ void WinApp::Initialize()
 		nullptr);                 // オプション
 
 	ShowWindow(hwnd, SW_SHOW);
+
+	// システムタイマーの分解能力を上げる
+	timeBeginPeriod(1);
+
 }
 
 bool WinApp::ProcessMessage()

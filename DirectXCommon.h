@@ -8,6 +8,9 @@
 #include <dxcapi.h>
 #include <array>
 #include <string>
+#include <chrono>
+#include <thread>
+
 // DirectXの基盤
 class DirectXCommon
 {
@@ -25,6 +28,8 @@ public:
 	void ScissorRectInitialize();
 	void DXCInitialize();
 	void ImGuiInitialize();
+	void InitializeFixFPS();
+	void UpdateFixFPS();
 	void Update();
 	void PreDraw();
 	void PostDraw();
@@ -41,6 +46,7 @@ private:
 
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocator;
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList;
+	
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue;
 	D3D12_COMMAND_QUEUE_DESC commandQueueDesc{};
 
@@ -81,6 +87,8 @@ private:
 	int backBufferIndex = 0;
 
 	D3D12_RESOURCE_BARRIER barrier{};
+
+	std::chrono::steady_clock::time_point reference_;
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> CreateDepthStencilTextureResource(int32_t width, int32_t height);
 
