@@ -3,8 +3,8 @@
 namespace stringUtility {
 
 	// stringをwstringに変換する
-	std::wstring ComverString(const std::string& str);
+	std::wstring ConverString(const std::string& str);
 	// stringをstringに変換する
-	std::string ComverString(const std::wstring& str);
+	std::string ConverString(const std::wstring& str);
 };
 

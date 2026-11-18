@@ -2,8 +2,8 @@
 #include <windows.h>
 #include <string>
 
-namespace StringUtility {
-	std::wstring ConvertString(const std::string& str) {
+namespace stringUtility {
+	std::wstring ConverString(const std::string& str) {
 		if (str.empty()) {
 			return std::wstring();
 		}
@@ -17,7 +17,7 @@ namespace StringUtility {
 		return result;
 	}
 
-	std::string ConvertString(const std::wstring& str) {
+	std::string ConverString(const std::wstring& str) {
 		if (str.empty()) {
 			return std::string();
 		}

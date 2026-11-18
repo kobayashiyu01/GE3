@@ -1,11 +1,13 @@
 #pragma once
 #include "WinApp.h"
+#include "externals/DirectXTex/DirectXTex.h"
 #include <d3d12.h>
 #include <dxgi1_6.h>
 #include <wrl.h>
 #include <dxgidebug.h>
 #include <dxcapi.h>
 #include <array>
+#include <string>
 // DirectXの基盤
 class DirectXCommon
 {
@@ -74,7 +76,7 @@ private:
 
 	IDxcUtils* dxcUtils;
 	IDxcCompiler3* dxcCompiler;
-	IDxcIncludeHandler* includehandler;
+	IDxcIncludeHandler* includeHandler;
 
 	int backBufferIndex = 0;
 
@@ -82,8 +84,22 @@ private:
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> CreateDepthStencilTextureResource(int32_t width, int32_t height);
 
+
+
 public:
 
+	IDxcBlob* CompileShader(
+		// compilerするShaderファイルへのパス
+		const std::wstring& filePath,
+		// compilerに使用するProfile
+		const wchar_t* profile);
+	Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(
+		size_t sizeInBytes);
+	Microsoft::WRL::ComPtr<ID3D12Resource> CreateTextureResource(
+		const DirectX::TexMetadata& metadata);
+
+	DirectX::ScratchImage LoadTexture(const std::string& filePath);
+	void UploadTextureData(const Microsoft::WRL::ComPtr<ID3D12Resource>& texture, const DirectX::ScratchImage& mipImages);
 	static D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& descriptorHeap, uint32_t descriptorSize, uint32_t index);
 
 	static D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& descriptorHeap, uint32_t descriptorSize, uint32_t index);
@@ -105,7 +121,7 @@ public:
 	ID3D12Fence* GetFence() { return fence.Get(); }
 	IDxcUtils* GetDxcUtils() { return dxcUtils; }
 	IDxcCompiler3* GetDxcCompiler() { return dxcCompiler; }
-	IDxcIncludeHandler* GetIncludeHandler() { return includehandler; }
+	IDxcIncludeHandler* GetIncludeHandler() { return includeHandler; }
 	ID3D12DescriptorHeap* GetSRVDescriptorHeap() { return srvDescriptorHeap.Get(); };
 	D3D12_RESOURCE_BARRIER* GetBarrier() { return &barrier; }
 
