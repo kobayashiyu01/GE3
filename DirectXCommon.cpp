@@ -306,6 +306,7 @@ void DirectXCommon::Initialize(WinApp* winApp)
 	ScissorRectInitialize();
 	DXCInitialize();
 	ImGuiInitialize();
+	InitializeFixFPS();
 }
 D3D12_CPU_DESCRIPTOR_HANDLE DirectXCommon::GetSRVCPUDescriptorHandle(uint32_t index) {
 	return GetCPUDescriptorHandle(srvDescriptorHeap, descriptorSizeSRV, index);
@@ -631,7 +632,6 @@ void DirectXCommon::InitializeFixFPS()
 
 void DirectXCommon::UpdateFixFPS()
 {
-	InitializeFixFPS();
 
 	//1/60秒ぴったりの時間
 	const std::chrono::microseconds kMinTime(uint64_t(1000000.0f / 60.0f));
@@ -646,10 +646,10 @@ void DirectXCommon::UpdateFixFPS()
 	std::chrono::microseconds slapsed = std::chrono::duration_cast<std::chrono::microseconds>(now - reference_);
 
 	// 1/60秒（よりわずかに短い時間）立っていない場合
-	if (slapsed < kMinTime) {
+	if (slapsed < kMinCheckTime) {
 
 		// 1/60秒経過するまでに微小なスリープを繰り返す
-		while (std::chrono::steady_clock::now() - reference_ < kMinCheckTime) {
+		while (std::chrono::steady_clock::now() - reference_ < kMinTime) {
 
 			// 1マイクロ秒スリープ
 			std::this_thread::sleep_for(std::chrono::microseconds(1));
@@ -778,6 +778,7 @@ void DirectXCommon::PostDraw()
 			INFINITE
 		);
 	}
+	UpdateFixFPS();
 }
 
 void DirectXCommon::Finalize()
