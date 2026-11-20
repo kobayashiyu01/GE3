@@ -16,6 +16,24 @@
     <Filter Include="imGui">
       <UniqueIdentifier>{f6d27170-39be-4922-ba79-5d173d2346ab}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\Engine">
+      <UniqueIdentifier>{5b7538b6-59fd-424c-8b8e-319d135ff6ba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\Engine\Windows">
+      <UniqueIdentifier>{eb855b53-6ca6-44ed-b7d1-c63ec27faf7b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\Engine\Device">
+      <UniqueIdentifier>{cc323ea1-734d-4edd-ad3e-bff44391f9b0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\Engine\Debug">
+      <UniqueIdentifier>{28fc44ba-0258-41bd-89ee-22764f12d2a5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\Engine\DXC">
+      <UniqueIdentifier>{64e2e171-43f3-425b-9054-b767eab16c28}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\Engine\Log">
+      <UniqueIdentifier>{f5f0fcc7-229d-45be-98c5-bcb6155b7e67}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -42,23 +60,23 @@
     <ClCompile Include="externals\imgui\imgui_widgets.cpp">
       <Filter>imGui</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\DebugCamera.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\Input.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>ソース ファイル\Engine\Device</Filter>
     </ClCompile>
     <ClCompile Include="Engine\WinApp.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>ソース ファイル\Engine\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\DebugCamera.cpp">
+      <Filter>ソース ファイル\Engine\Debug</Filter>
     </ClCompile>
     <ClCompile Include="Engine\DirectXCommon.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>ソース ファイル\Engine\DXC</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Logger.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>ソース ファイル\Engine\Log</Filter>
     </ClCompile>
     <ClCompile Include="Engine\StringUtility.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>ソース ファイル\Engine\Log</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
