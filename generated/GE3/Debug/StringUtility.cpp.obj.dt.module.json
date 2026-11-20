@@ -1,0 +1,14 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "C:\\Users\\YKPcT\\source\\repos\\CG2\\project\\..\\generated\\GE3\\Debug\\StringUtility.obj",
+            "outputs": [
+                "C:\\Users\\YKPcT\\source\\repos\\CG2\\project\\..\\generated\\GE3\\Debug\\StringUtility.cpp.obj.dt.module.json",
+                "C:\\Users\\YKPcT\\source\\repos\\CG2\\project\\..\\generated\\GE3\\Debug\\StringUtility.cpp.obj.dt.d.json"
+            ],
+            "requires": []
+        }
+    ]
+}
