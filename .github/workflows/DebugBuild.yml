@@ -3,7 +3,7 @@ name: DebugBuild
 on:
   push:
     branches:
-      - master
+      - GE3
       
       env:
         # リポジトリのルートディレクトリを基点としたソリューションファイルのパス
