@@ -3,11 +3,11 @@
 #include <fstream>
 #include <sstream>
 #include <xaudio2.h>
-#include "DebugCamera.h"
-#include "Input.h"
-#include "DirectXCommon.h"
-#include "StringUtility.h"
-#include "Logger.h"
+#include "Engine/DebugCamera.h"
+#include "Engine/Input.h"
+#include "Engine/DirectXCommon.h"
+#include "Engine/StringUtility.h"
+#include "Engine/Logger.h"
 #pragma comment(lib,"dxcompiler.lib")
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib,"xaudio2.lib")
@@ -661,10 +661,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int)
 	rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
 
 	// Shaderをコンパイルする
-	IDxcBlob* vertexShaderBlob = dxCommon->CompileShader(L"Object3D.VS.hlsl",
+	IDxcBlob* vertexShaderBlob = dxCommon->CompileShader(L"Graphics/Object3D.VS.hlsl",
 		L"vs_6_0");
 
-	IDxcBlob* pixelShaderBlob = dxCommon->CompileShader(L"Object3D.PS.hlsl",
+	IDxcBlob* pixelShaderBlob = dxCommon->CompileShader(L"Graphics/Object3D.PS.hlsl",
 		L"ps_6_0");
 	assert(pixelShaderBlob != nullptr);
 	assert(vertexShaderBlob);
