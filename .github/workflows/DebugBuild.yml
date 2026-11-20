@@ -5,7 +5,7 @@ on:
       - master
 env:
   # リポジトリのルートディレクトリを基点としたソリューションファイルのパス
-  SOLUTION_FILE_PATH: project/GE3.sln
+  SOLUTION_FILE_PATH: GE3.sln
   # Visual Studio の構成(Debug/Relese)
   CONFIGURATION: Debug
 jobs:
