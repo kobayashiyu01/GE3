@@ -1,0 +1,60 @@
+#include "Input.h"
+#include <cassert>
+
+void  Input::Initialize(WinApp* winApp)
+{
+	// 借りてきたWinAppのインスタンスを記録
+	this->winApp = winApp;
+	HRESULT hr;
+
+	// 初期化処理
+
+	hr = DirectInput8Create(winApp->GetHInstance(), DIRECTINPUT_VERSION, IID_IDirectInput8, (void**)&directInput, nullptr);
+
+	hr = directInput->CreateDevice(GUID_SysKeyboard, &keyboard, NULL);
+	assert(SUCCEEDED(hr));
+
+	hr = keyboard->SetDataFormat(&c_dfDIKeyboard); // 標準形式
+	assert(SUCCEEDED(hr));
+
+	// 排他制御レベルのセット
+	hr = keyboard->SetCooperativeLevel(winApp->GetHwnd(), DISCL_FOREGROUND | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY);
+	assert(SUCCEEDED(hr));
+
+
+}
+
+bool Input::PushKey(BYTE keyNumber)
+{
+	// 指定キーを押していればtrueを返す
+	if (key[keyNumber]) {
+		return true;
+	}
+
+	return false;
+}
+
+bool Input::TriggerKey(BYTE keyNumber)
+{
+	// 指定キーを押していればtrueを返す
+	if (key[keyNumber] && !keyPre[keyNumber]) {
+		return true;
+	}
+	return false;
+}
+
+void Input::Update()
+{
+	// 更新処理
+
+	HRESULT hr;
+
+	// 前回のキーの入力状態を保存
+	memcpy(keyPre, key, sizeof(key));
+
+	// キーボード情報の取得開始
+	hr = keyboard->Acquire();
+	hr = keyboard->GetDeviceState(sizeof(key), key);
+
+
+}
