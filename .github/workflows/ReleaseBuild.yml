@@ -1,0 +1,22 @@
+名前: ReleaseBuild
+の上：
+  押す：
+    支店:
+      -マスター
+環境:
+  #リポジトリのルートディレクトリを基点としたソリューションファイルのパス
+  ソリューションファイルパス：project/GE3.sln
+  # Visual Studioの構成(デバッグ/リリース)
+  設定：デバッグ
+仕事：
+  建てる：
+    実行環境: windows-2025-vs2026
+    手順：
+      -名前:チェックアウト
+        使用例: actions/checkout@v6
+      -名前: MSBuild を PATH に追加する
+        使用箇所: microsoft/setup-msbuild@v3
+        と：
+          msbuildアーキテクチャ: x64
+      -名前:ビルド
+        実行: msbuild project/GE3.slnx /p:Platform=x64 /p:Configuration=Release
